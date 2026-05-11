@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/alerts/presentation/pages/alerts_page.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/auth_state.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
@@ -9,6 +10,8 @@ import '../../features/crops/presentation/pages/crop_detail_page.dart';
 import '../../features/crops/presentation/pages/crops_page.dart';
 import '../../features/farms/presentation/pages/farms_page.dart';
 import '../../features/plots/presentation/pages/plots_page.dart';
+import '../../features/sensors/presentation/pages/dashboard_page.dart';
+import '../widgets/main_shell.dart';
 
 GoRouter createRouter(AuthBloc authBloc) {
   return GoRouter(
@@ -21,37 +24,53 @@ GoRouter createRouter(AuthBloc authBloc) {
           state.matchedLocation == '/register';
 
       if (!isAuthenticated && !isAuthRoute) return '/login';
-      if (isAuthenticated && isAuthRoute) return '/farms';
+      if (isAuthenticated && isAuthRoute) return '/dashboard';
       return null;
     },
     routes: [
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
       GoRoute(path: '/register', builder: (_, __) => const RegisterPage()),
-      GoRoute(
-        path: '/farms',
-        builder: (_, __) => const FarmsPage(),
+
+      // Shell con BottomNavigationBar
+      ShellRoute(
+        builder: (context, state, child) => MainShell(child: child),
         routes: [
           GoRoute(
-            path: ':farmId/plots',
-            builder: (context, state) {
-              final farmId = state.pathParameters['farmId']!;
-              final farmName = state.extra as String? ?? 'Parcelas';
-              return PlotsPage(farmId: farmId, farmName: farmName);
-            },
+            path: '/dashboard',
+            builder: (_, __) => const DashboardPage(),
+          ),
+          GoRoute(
+            path: '/farms',
+            builder: (_, __) => const FarmsPage(),
             routes: [
               GoRoute(
-                path: ':plotId/crops',
+                path: ':farmId/plots',
                 builder: (context, state) {
-                  final plotId = state.pathParameters['plotId']!;
-                  final plotName = state.extra as String? ?? 'Cultivos';
-                  return CropsPage(plotId: plotId, plotName: plotName);
+                  final farmId = state.pathParameters['farmId']!;
+                  final farmName = state.extra as String? ?? 'Parcelas';
+                  return PlotsPage(farmId: farmId, farmName: farmName);
                 },
+                routes: [
+                  GoRoute(
+                    path: ':plotId/crops',
+                    builder: (context, state) {
+                      final plotId = state.pathParameters['plotId']!;
+                      final plotName = state.extra as String? ?? 'Cultivos';
+                      return CropsPage(plotId: plotId, plotName: plotName);
+                    },
+                  ),
+                ],
               ),
             ],
           ),
+          GoRoute(
+            path: '/alerts',
+            builder: (_, __) => const AlertsPage(),
+          ),
         ],
       ),
-      // Ruta de detalle al nivel raíz — accesible desde cualquier punto
+
+      // Fuera del shell — pantallas de detalle
       GoRoute(
         path: '/crop-detail',
         builder: (context, state) {

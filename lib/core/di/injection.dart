@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
+import '../../features/alerts/data/datasources/alerts_remote_datasource.dart';
+import '../../features/alerts/presentation/bloc/alerts_cubit.dart';
 import '../../features/auth/data/datasources/auth_remote_datasource.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
@@ -22,6 +24,8 @@ import '../../features/plots/data/datasources/plots_remote_datasource.dart';
 import '../../features/plots/data/repositories/plots_repository_impl.dart';
 import '../../features/plots/domain/repositories/plots_repository.dart';
 import '../../features/plots/presentation/bloc/plots_bloc.dart';
+import '../../features/sensors/data/datasources/sensors_remote_datasource.dart';
+import '../../features/sensors/presentation/bloc/dashboard_cubit.dart';
 import '../api/dio_client.dart';
 
 final sl = GetIt.instance;
@@ -57,6 +61,7 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<CropsRepository>(() => CropsRepositoryImpl(sl()));
   sl.registerFactory<CropsBloc>(() => CropsBloc(sl()));
 
+  // Crop Details
   sl.registerLazySingleton(() => IrrigationRemoteDatasource(sl()));
   sl.registerLazySingleton(() => FertilizationRemoteDatasource(sl()));
   sl.registerLazySingleton(() => LaborRemoteDatasource(sl()));
@@ -66,5 +71,19 @@ Future<void> initDependencies() async {
         fertilizationDs: sl(),
         laborDs: sl(),
         imagesDs: sl(),
+      ));
+
+  // Alerts
+  sl.registerLazySingleton(() => AlertsRemoteDatasource(sl()));
+  sl.registerFactory(() => AlertsCubit(sl()));
+
+  // Sensors
+  sl.registerLazySingleton(() => SensorsRemoteDatasource(sl()));
+  sl.registerFactory(() => DashboardCubit(
+        farmsDs: sl(),
+        plotsDs: sl(),
+        cropsDs: sl(),
+        sensorsDs: sl(),
+        alertsDs: sl(),
       ));
 }

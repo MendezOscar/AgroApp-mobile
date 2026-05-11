@@ -40,7 +40,7 @@ dependencies:
   latlong2: ^0.9.1
 
   # Gráficas para sensores
-  fl_chart: ^0.69.0
+  fl_chart: ^1.2.0
 
   # Iconos
   cupertino_icons: ^1.0.8

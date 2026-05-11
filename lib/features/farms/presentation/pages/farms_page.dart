@@ -3,8 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/alert_badge.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
+import '../../../alerts/presentation/bloc/alerts_cubit.dart';
+import '../../../alerts/presentation/bloc/alerts_state.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../domain/entities/farm_entity.dart';
@@ -82,6 +85,7 @@ class _FarmsPageState extends State<FarmsPage> {
         appBar: AppBar(
           title: const Text('Mis Fincas'),
           actions: [
+            const AlertBadge(),
             IconButton(
               icon: const Icon(Icons.logout),
               onPressed: () {
