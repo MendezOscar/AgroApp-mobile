@@ -1,4 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../../../core/api/dio_client.dart';
+import '../../../../core/services/notification_service.dart';
 import '../datasources/auth_remote_datasource.dart';
 import '../models/auth_model.dart';
 import '../../domain/entities/auth_entity.dart';
@@ -16,7 +19,28 @@ class AuthRepositoryImpl implements AuthRepository {
     final data = await _datasource.login(email, password);
     final model = AuthModel.fromJson(data);
     await _storage.write(key: AppConstants.tokenKey, value: model.token);
+
+    // Registrar token FCM
+    _registerFcmToken();
+
     return model;
+  }
+
+  void _registerFcmToken() async {
+    try {
+      final token = await NotificationService.getToken();
+      if (token != null) {
+        // Necesitamos Dio con el token ya guardado
+        final dio = DioClient.createDio(_storage);
+        await dio.post('/notifications/fcm-token', data: {
+          'token': token,
+          'platform': 'mobile',
+        });
+      }
+    } catch (e) {
+      // No bloqueamos el login si falla el registro del token
+      debugPrint('FCM token registration failed: $e');
+    }
   }
 
   @override
