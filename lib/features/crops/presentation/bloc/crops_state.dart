@@ -12,10 +12,12 @@ class CropsLoading extends CropsState {}
 
 class CropsLoaded extends CropsState {
   final List<CropEntity> crops;
-  CropsLoaded(this.crops);
+  final bool isOffline;
+
+  CropsLoaded(this.crops, {this.isOffline = false});
 
   @override
-  List<Object?> get props => [crops];
+  List<Object?> get props => [crops, isOffline];
 }
 
 class CropsError extends CropsState {

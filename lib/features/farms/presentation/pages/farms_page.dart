@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/di/injection.dart';
+import '../../../../core/services/connectivity_service.dart';
+import '../../../../core/services/initial_sync_service.dart';
+import '../../../../core/services/sync_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/alert_badge.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
-import '../../../alerts/presentation/bloc/alerts_cubit.dart';
-import '../../../alerts/presentation/bloc/alerts_state.dart';
+import '../../../../core/widgets/offline_banner.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../domain/entities/farm_entity.dart';
@@ -26,11 +28,25 @@ class FarmsPage extends StatefulWidget {
 
 class _FarmsPageState extends State<FarmsPage> {
   late final FarmsBloc _farmsBloc;
+  bool _isSyncing = false;
 
   @override
   void initState() {
     super.initState();
     _farmsBloc = sl<FarmsBloc>()..add(LoadFarms());
+    _runInitialSync();
+  }
+
+  Future<void> _runInitialSync() async {
+    final isOnline = await ConnectivityService.isOnline();
+    if (!isOnline) return;
+
+    setState(() => _isSyncing = true);
+    await sl<InitialSyncService>().syncAll();
+    if (mounted) {
+      setState(() => _isSyncing = false);
+      _farmsBloc.add(LoadFarms());
+    }
   }
 
   @override
@@ -85,12 +101,45 @@ class _FarmsPageState extends State<FarmsPage> {
         appBar: AppBar(
           title: const Text('Mis Fincas'),
           actions: [
+            if (_isSyncing)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+                child: Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                ),
+              ),
             const AlertBadge(),
             IconButton(
               icon: const Icon(Icons.logout),
               onPressed: () {
                 context.read<AuthBloc>().add(LogoutRequested());
                 context.go('/login');
+              },
+            ),
+            FutureBuilder<int>(
+              future: sl<SyncService>().getPendingCount(),
+              builder: (context, snapshot) {
+                final count = snapshot.data ?? 0;
+                if (count == 0) return const SizedBox();
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Chip(
+                    backgroundColor: Colors.orange,
+                    label: Text(
+                      '$count pendiente${count > 1 ? 's' : ''}',
+                      style: const TextStyle(color: Colors.white, fontSize: 11),
+                    ),
+                    avatar:
+                        const Icon(Icons.sync, color: Colors.white, size: 16),
+                  ),
+                );
               },
             ),
           ],
@@ -107,37 +156,45 @@ class _FarmsPageState extends State<FarmsPage> {
             }
           },
           builder: (context, state) {
-            if (state is FarmsLoading) return const LoadingWidget();
-
-            if (state is FarmsLoaded) {
-              if (state.farms.isEmpty) {
-                return EmptyStateWidget(
-                  message: 'No tienes fincas registradas',
-                  icon: Icons.agriculture_outlined,
-                  actionLabel: 'Agregar finca',
-                  onAction: _showCreateFarm,
-                );
-              }
-
-              return RefreshIndicator(
-                color: AppTheme.primary,
-                onRefresh: () async => _farmsBloc.add(LoadFarms()),
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: state.farms.length,
-                  itemBuilder: (_, i) => FarmCard(
-                    farm: state.farms[i],
-                    onTap: () => context.push(
-                      '/farms/${state.farms[i].id}/plots',
-                      extra: state.farms[i].name,
-                    ),
-                    onDelete: () => _confirmDelete(state.farms[i]),
-                  ),
+            return Column(
+              children: [
+                // Banner offline
+                if (state is FarmsLoaded && state.isOffline)
+                  const OfflineBanner(),
+                // Resto del contenido
+                Expanded(
+                  child: state is FarmsLoading
+                      ? const LoadingWidget()
+                      : state is FarmsLoaded
+                          ? state.farms.isEmpty
+                              ? EmptyStateWidget(
+                                  message: 'No tienes fincas registradas',
+                                  icon: Icons.agriculture_outlined,
+                                  actionLabel: 'Agregar finca',
+                                  onAction: _showCreateFarm,
+                                )
+                              : RefreshIndicator(
+                                  color: AppTheme.primary,
+                                  onRefresh: () async =>
+                                      _farmsBloc.add(LoadFarms()),
+                                  child: ListView.builder(
+                                    padding: const EdgeInsets.all(16),
+                                    itemCount: state.farms.length,
+                                    itemBuilder: (_, i) => FarmCard(
+                                      farm: state.farms[i],
+                                      onTap: () => context.push(
+                                        '/farms/${state.farms[i].id}/plots',
+                                        extra: state.farms[i].name,
+                                      ),
+                                      onDelete: () =>
+                                          _confirmDelete(state.farms[i]),
+                                    ),
+                                  ),
+                                )
+                          : const SizedBox(),
                 ),
-              );
-            }
-
-            return const SizedBox();
+              ],
+            );
           },
         ),
         floatingActionButton: FloatingActionButton.extended(

@@ -5,6 +5,7 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
+import '../../../../core/widgets/offline_banner.dart';
 import '../../domain/entities/crop_entity.dart';
 import '../bloc/crops_bloc.dart';
 import '../bloc/crops_event.dart';
@@ -93,36 +94,45 @@ class _CropsPageState extends State<CropsPage> {
             }
           },
           builder: (context, state) {
-            if (state is CropsLoading) return const LoadingWidget();
-
-            if (state is CropsLoaded) {
-              if (state.crops.isEmpty) {
-                return EmptyStateWidget(
-                  message: 'No tienes cultivos registrados',
-                  icon: Icons.grass_outlined,
-                  onAction: _showCreateCrop,
-                );
-              }
-
-              return RefreshIndicator(
-                color: AppTheme.primary,
-                onRefresh: () async => _cropsBloc.add(LoadCrops(widget.plotId)),
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: state.crops.length,
-                  itemBuilder: (_, i) => CropCard(
-                    crop: state.crops[i],
-                    onTap: () => context.push(
-                      '/crop-detail',
-                      extra: state.crops[i],
-                    ),
-                    onDelete: () => _confirmDelete(state.crops[i]),
-                  ),
+            return Column(
+              children: [
+                // Banner offline
+                if (state is CropsLoaded && state.isOffline)
+                  const OfflineBanner(),
+                // Contenido
+                Expanded(
+                  child: state is CropsLoading
+                      ? const LoadingWidget()
+                      : state is CropsLoaded
+                          ? state.crops.isEmpty
+                              ? EmptyStateWidget(
+                                  message: 'No tienes cultivos registrados',
+                                  icon: Icons.grass_outlined,
+                                  actionLabel: 'Agregar cultivo',
+                                  onAction: _showCreateCrop,
+                                )
+                              : RefreshIndicator(
+                                  color: AppTheme.primary,
+                                  onRefresh: () async =>
+                                      _cropsBloc.add(LoadCrops(widget.plotId)),
+                                  child: ListView.builder(
+                                    padding: const EdgeInsets.all(16),
+                                    itemCount: state.crops.length,
+                                    itemBuilder: (_, i) => CropCard(
+                                      crop: state.crops[i],
+                                      onTap: () => context.push(
+                                        '/crop-detail',
+                                        extra: state.crops[i],
+                                      ),
+                                      onDelete: () =>
+                                          _confirmDelete(state.crops[i]),
+                                    ),
+                                  ),
+                                )
+                          : const SizedBox(),
                 ),
-              );
-            }
-
-            return const SizedBox();
+              ],
+            );
           },
         ),
         floatingActionButton: FloatingActionButton.extended(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../../core/api/dio_client.dart';
+import '../../../../core/di/injection.dart';
+import '../../../../core/services/initial_sync_service.dart';
 import '../../../../core/services/notification_service.dart';
 import '../datasources/auth_remote_datasource.dart';
 import '../models/auth_model.dart';
@@ -22,6 +24,11 @@ class AuthRepositoryImpl implements AuthRepository {
 
     // Registrar token FCM
     _registerFcmToken();
+
+    // Sync inicial en background — no bloquea el login
+    Future.delayed(const Duration(seconds: 1), () {
+      sl<InitialSyncService>().syncAll();
+    });
 
     return model;
   }

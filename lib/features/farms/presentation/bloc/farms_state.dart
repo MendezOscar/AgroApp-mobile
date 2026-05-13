@@ -12,10 +12,12 @@ class FarmsLoading extends FarmsState {}
 
 class FarmsLoaded extends FarmsState {
   final List<FarmEntity> farms;
-  FarmsLoaded(this.farms);
+  final bool isOffline;
+
+  FarmsLoaded(this.farms, {this.isOffline = false});
 
   @override
-  List<Object?> get props => [farms];
+  List<Object?> get props => [farms, isOffline];
 }
 
 class FarmsError extends FarmsState {

@@ -13,6 +13,7 @@ class CropDetailState extends Equatable {
   final bool isLoadingFertilization;
   final bool isLoadingLabor;
   final bool isLoadingImages;
+  final bool isOffline;
   final String? error;
 
   const CropDetailState({
@@ -24,6 +25,7 @@ class CropDetailState extends Equatable {
     this.isLoadingFertilization = false,
     this.isLoadingLabor = false,
     this.isLoadingImages = false,
+    this.isOffline = false,
     this.error,
   });
 
@@ -36,6 +38,7 @@ class CropDetailState extends Equatable {
     bool? isLoadingFertilization,
     bool? isLoadingLabor,
     bool? isLoadingImages,
+    bool? isOffline,
     String? error,
   }) =>
       CropDetailState(
@@ -48,6 +51,7 @@ class CropDetailState extends Equatable {
             isLoadingFertilization ?? this.isLoadingFertilization,
         isLoadingLabor: isLoadingLabor ?? this.isLoadingLabor,
         isLoadingImages: isLoadingImages ?? this.isLoadingImages,
+        isOffline: isOffline ?? this.isOffline,
         error: error,
       );
 
@@ -61,6 +65,7 @@ class CropDetailState extends Equatable {
         isLoadingFertilization,
         isLoadingLabor,
         isLoadingImages,
+        isOffline,
         error,
       ];
 }

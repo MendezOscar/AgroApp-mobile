@@ -1,38 +1,71 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/services/connectivity_service.dart';
 import '../../data/datasources/alerts_remote_datasource.dart';
 import '../../data/models/alert_model.dart';
+import '../../data/repositories/alerts_local_repository.dart';
 import 'alerts_state.dart';
 
 class AlertsCubit extends Cubit<AlertsState> {
   final AlertsRemoteDatasource _datasource;
+  final AlertsLocalRepository _localRepository;
 
-  AlertsCubit(this._datasource) : super(const AlertsState());
+  AlertsCubit(this._datasource, this._localRepository)
+      : super(const AlertsState());
 
   Future<void> loadAlerts({bool onlyUnread = false}) async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true, error: null));
     try {
-      final data = await _datasource.getAlerts(onlyUnread: onlyUnread);
-      final count = await _datasource.getUnreadCount();
-      emit(state.copyWith(
-        alerts: data.map((e) => AlertModel.fromJson(e)).toList(),
-        unreadCount: count,
-        isLoading: false,
-      ));
-    } catch (e) {
-      if (e is DioException) {
-        print('ERROR ALERTAS STATUS: ${e.response?.statusCode}');
-        print('ERROR ALERTAS RESPONSE: ${e.response?.data}');
+      final isOnline = await ConnectivityService.isOnline();
+      if (isOnline) {
+        final data = await _datasource.getAlerts(onlyUnread: onlyUnread);
+        final alerts = data.map((e) => AlertModel.fromJson(e)).toList();
+        final count = await _datasource.getUnreadCount();
+        await _localRepository.saveAlerts(alerts);
+        emit(state.copyWith(
+          alerts: alerts,
+          unreadCount: count,
+          isLoading: false,
+          isOffline: false,
+        ));
+      } else {
+        // Cargar desde cache local
+        final alerts = await _localRepository.getAlerts();
+        final unread = alerts.where((a) => !a.isRead).length;
+        emit(state.copyWith(
+          alerts: onlyUnread ? alerts.where((a) => !a.isRead).toList() : alerts,
+          unreadCount: unread,
+          isLoading: false,
+          isOffline: true,
+        ));
       }
-      print('ERROR ALERTAS: $e');
-      emit(state.copyWith(isLoading: false, error: 'Error al cargar alertas'));
+    } catch (e) {
+      // Intentar desde cache local
+      try {
+        final alerts = await _localRepository.getAlerts();
+        final unread = alerts.where((a) => !a.isRead).length;
+        emit(state.copyWith(
+          alerts: alerts,
+          unreadCount: unread,
+          isLoading: false,
+          isOffline: true,
+        ));
+      } catch (_) {
+        emit(state.copyWith(
+            isLoading: false, error: 'No se pudieron cargar las alertas'));
+      }
     }
   }
 
   Future<void> markAsRead(String id) async {
     try {
-      await _datasource.markAsRead(id);
-      await loadAlerts();
+      final isOnline = await ConnectivityService.isOnline();
+      if (isOnline) {
+        await _datasource.markAsRead(id);
+        await loadAlerts();
+      } else {
+        emit(state.copyWith(
+            error: 'Sin conexión. Intenta cuando tengas internet.'));
+      }
     } catch (e) {
       emit(state.copyWith(error: 'Error al marcar alerta'));
     }
@@ -40,11 +73,17 @@ class AlertsCubit extends Cubit<AlertsState> {
 
   Future<void> markAllAsRead() async {
     try {
-      final unread = state.alerts.where((a) => !a.isRead).toList();
-      for (final alert in unread) {
-        await _datasource.markAsRead(alert.id);
+      final isOnline = await ConnectivityService.isOnline();
+      if (isOnline) {
+        final unread = state.alerts.where((a) => !a.isRead).toList();
+        for (final alert in unread) {
+          await _datasource.markAsRead(alert.id);
+        }
+        await loadAlerts();
+      } else {
+        emit(state.copyWith(
+            error: 'Sin conexión. Intenta cuando tengas internet.'));
       }
-      await loadAlerts();
     } catch (e) {
       emit(state.copyWith(error: 'Error al marcar alertas'));
     }

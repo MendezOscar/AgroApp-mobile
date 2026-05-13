@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/di/injection.dart';
 import 'core/router/app_router.dart';
+import 'core/services/connectivity_service.dart';
+import 'core/services/initial_sync_service.dart';
 import 'core/services/notification_service.dart';
+import 'core/services/sync_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/bloc/auth_event.dart';
@@ -34,6 +37,15 @@ class _AgroAppState extends State<AgroApp> {
   void initState() {
     super.initState();
     _authBloc = sl<AuthBloc>()..add(CheckAuthStatus());
+
+    // Sincronizar pendientes y datos cuando vuelve la conexión
+    ConnectivityService.onConnectivityChanged.listen((isOnline) {
+      if (isOnline) {
+        debugPrint('Conexión restaurada — sincronizando...');
+        sl<SyncService>().syncPending();
+        sl<InitialSyncService>().syncAll();
+      }
+    });
   }
 
   @override

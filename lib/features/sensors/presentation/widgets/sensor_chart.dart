@@ -25,33 +25,22 @@ class SensorChart extends StatelessWidget {
         readings.where((r) => getValue(r) != null).toList().reversed.toList();
 
     if (validReadings.isEmpty) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 40),
-              const Center(
-                  child: Text('Sin datos disponibles',
-                      style: TextStyle(color: Colors.grey))),
-            ],
-          ),
-        ),
-      );
+      return _emptyCard();
     }
 
-    final spots = validReadings.asMap().entries.map((e) {
+    // Si solo hay un punto, duplicarlo para poder dibujar la línea
+    final chartReadings = validReadings.length == 1
+        ? [validReadings.first, validReadings.first]
+        : validReadings;
+
+    final spots = chartReadings.asMap().entries.map((e) {
       return FlSpot(e.key.toDouble(), getValue(e.value)!);
     }).toList();
 
     final minY = spots.map((s) => s.y).reduce((a, b) => a < b ? a : b);
     final maxY = spots.map((s) => s.y).reduce((a, b) => a > b ? a : b);
     final range = maxY - minY;
-    final padding = range == 0 ? 1.0 : range * 0.1;
-
-// Intervalo seguro — nunca puede ser 0
+    final padding = range == 0 ? 2.0 : range * 0.15;
     final horizontalInterval = range == 0 ? 1.0 : range / 4;
 
     return Card(
@@ -78,6 +67,15 @@ class SensorChart extends StatelessWidget {
                 ),
               ],
             ),
+            // Mensaje si hay pocos datos
+            if (validReadings.length == 1)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Solo 1 lectura — necesitas más datos para ver la tendencia',
+                  style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                ),
+              ),
             const SizedBox(height: 16),
             SizedBox(
               height: 150,
@@ -86,8 +84,7 @@ class SensorChart extends StatelessWidget {
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: false,
-                    horizontalInterval:
-                        horizontalInterval, // ← usar la variable
+                    horizontalInterval: horizontalInterval,
                     getDrawingHorizontalLine: (_) => FlLine(
                       color: Colors.grey.withValues(alpha: 0.2),
                       strokeWidth: 1,
@@ -107,14 +104,14 @@ class SensorChart extends StatelessWidget {
                     ),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
-                        showTitles: true,
-                        interval: validReadings.length / 4,
+                        showTitles: validReadings.length > 1,
+                        interval: chartReadings.length / 4,
                         getTitlesWidget: (value, _) {
                           final idx = value.toInt();
-                          if (idx >= 0 && idx < validReadings.length) {
+                          if (idx >= 0 && idx < chartReadings.length) {
                             return Text(
                               DateFormat('HH:mm')
-                                  .format(validReadings[idx].recordedAt),
+                                  .format(chartReadings[idx].recordedAt),
                               style: const TextStyle(
                                   fontSize: 9, color: Colors.grey),
                             );
@@ -134,10 +131,12 @@ class SensorChart extends StatelessWidget {
                   lineBarsData: [
                     LineChartBarData(
                       spots: spots,
-                      isCurved: true,
+                      isCurved: validReadings.length > 2,
                       color: color,
                       barWidth: 2.5,
-                      dotData: const FlDotData(show: false),
+                      dotData: FlDotData(
+                        show: validReadings.length <= 3,
+                      ),
                       belowBarData: BarAreaData(
                         show: true,
                         color: color.withValues(alpha: 0.1),
@@ -147,6 +146,38 @@ class SensorChart extends StatelessWidget {
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration:
+                      BoxDecoration(color: color, shape: BoxShape.circle),
+                ),
+                const SizedBox(width: 8),
+                Text(title,
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 40),
+            Center(
+              child: Text('Sin datos disponibles',
+                  style: TextStyle(color: Colors.grey[500])),
+            ),
+            const SizedBox(height: 40),
           ],
         ),
       ),

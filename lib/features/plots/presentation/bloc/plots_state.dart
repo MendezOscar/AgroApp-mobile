@@ -12,10 +12,12 @@ class PlotsLoading extends PlotsState {}
 
 class PlotsLoaded extends PlotsState {
   final List<PlotEntity> plots;
-  PlotsLoaded(this.plots);
+  final bool isOffline;
+
+  PlotsLoaded(this.plots, {this.isOffline = false});
 
   @override
-  List<Object?> get props => [plots];
+  List<Object?> get props => [plots, isOffline];
 }
 
 class PlotsError extends PlotsState {

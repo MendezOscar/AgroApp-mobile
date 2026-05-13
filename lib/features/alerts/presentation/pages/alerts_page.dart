@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/loading_widget.dart';
+import '../../../../core/widgets/offline_banner.dart';
 import '../../domain/entities/alert_entity.dart';
 import '../bloc/alerts_cubit.dart';
 import '../bloc/alerts_state.dart';
@@ -99,7 +100,9 @@ class _AlertsPageState extends State<AlertsPage> {
           actions: [
             BlocBuilder<AlertsCubit, AlertsState>(
               builder: (context, state) {
-                if (state.unreadCount == 0) return const SizedBox();
+                if (state.unreadCount == 0 || state.isOffline) {
+                  return const SizedBox();
+                }
                 return TextButton.icon(
                   icon: const Icon(Icons.done_all, color: Colors.white),
                   label: const Text('Leer todas',
@@ -115,8 +118,12 @@ class _AlertsPageState extends State<AlertsPage> {
             if (state.error != null) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                    content: Text(state.error!),
-                    backgroundColor: AppTheme.error),
+                  content: Text(state.error!),
+                  backgroundColor: Colors.orange.shade700,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
               );
             }
           },
@@ -125,6 +132,9 @@ class _AlertsPageState extends State<AlertsPage> {
 
             return Column(
               children: [
+                // Banner offline
+                if (state.isOffline) const OfflineBanner(),
+
                 // Filtro
                 Padding(
                   padding:
@@ -146,9 +156,28 @@ class _AlertsPageState extends State<AlertsPage> {
                         '${state.alerts.length} alertas',
                         style: TextStyle(color: Colors.grey[600]),
                       ),
+                      if (state.isOffline) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'desde caché',
+                            style: TextStyle(
+                                color: Colors.orange,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
+
                 // Lista
                 Expanded(
                   child: state.alerts.isEmpty
@@ -162,7 +191,9 @@ class _AlertsPageState extends State<AlertsPage> {
                               Text(
                                 _onlyUnread
                                     ? 'No hay alertas sin leer'
-                                    : 'No hay alertas',
+                                    : state.isOffline
+                                        ? 'No hay alertas guardadas localmente'
+                                        : 'No hay alertas',
                                 style: TextStyle(color: Colors.grey[600]),
                               ),
                             ],
@@ -177,6 +208,7 @@ class _AlertsPageState extends State<AlertsPage> {
                             itemCount: state.alerts.length,
                             itemBuilder: (_, i) => _AlertCard(
                               alert: state.alerts[i],
+                              isOffline: state.isOffline,
                               onMarkRead: () =>
                                   _cubit.markAsRead(state.alerts[i].id),
                               severityColor:
@@ -200,6 +232,7 @@ class _AlertsPageState extends State<AlertsPage> {
 
 class _AlertCard extends StatelessWidget {
   final AlertEntity alert;
+  final bool isOffline;
   final VoidCallback onMarkRead;
   final Color severityColor;
   final IconData severityIcon;
@@ -207,6 +240,7 @@ class _AlertCard extends StatelessWidget {
 
   const _AlertCard({
     required this.alert,
+    required this.isOffline,
     required this.onMarkRead,
     required this.severityColor,
     required this.severityIcon,
@@ -268,9 +302,11 @@ class _AlertCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-            Text(alert.message,
-                style: TextStyle(
-                    color: alert.isRead ? Colors.grey[500] : Colors.black87)),
+            Text(
+              alert.message,
+              style: TextStyle(
+                  color: alert.isRead ? Colors.grey[500] : Colors.black87),
+            ),
             const SizedBox(height: 4),
             Text(
               fmt.format(alert.triggeredAt),
@@ -280,12 +316,14 @@ class _AlertCard extends StatelessWidget {
         ),
         trailing: alert.isRead
             ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
-            : IconButton(
-                icon: const Icon(Icons.mark_email_read_outlined),
-                color: severityColor,
-                onPressed: onMarkRead,
-                tooltip: 'Marcar como leída',
-              ),
+            : isOffline
+                ? Icon(Icons.wifi_off, color: Colors.grey[400], size: 20)
+                : IconButton(
+                    icon: const Icon(Icons.mark_email_read_outlined),
+                    color: severityColor,
+                    onPressed: onMarkRead,
+                    tooltip: 'Marcar como leída',
+                  ),
       ),
     );
   }

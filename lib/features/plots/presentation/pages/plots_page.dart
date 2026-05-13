@@ -5,6 +5,7 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
+import '../../../../core/widgets/offline_banner.dart';
 import '../../domain/entities/plot_entity.dart';
 import '../bloc/plots_bloc.dart';
 import '../bloc/plots_event.dart';
@@ -93,37 +94,43 @@ class _PlotsPageState extends State<PlotsPage> {
             }
           },
           builder: (context, state) {
-            if (state is PlotsLoading) return const LoadingWidget();
-
-            if (state is PlotsLoaded) {
-              if (state.plots.isEmpty) {
-                return EmptyStateWidget(
-                  message: 'No tienes parcelas registradas',
-                  icon: Icons.grid_view_outlined,
-                  actionLabel: 'Agregar parcela',
-                  onAction: _showCreatePlot,
-                );
-              }
-
-              return RefreshIndicator(
-                color: AppTheme.primary,
-                onRefresh: () async => _plotsBloc.add(LoadPlots(widget.farmId)),
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: state.plots.length,
-                  itemBuilder: (_, i) => PlotCard(
-                    plot: state.plots[i],
-                    onTap: () => context.push(
-                      '/farms/${widget.farmId}/plots/${state.plots[i].id}/crops',
-                      extra: state.plots[i].name,
-                    ),
-                    onDelete: () => _confirmDelete(state.plots[i]),
-                  ),
+            return Column(
+              children: [
+                if (state is PlotsLoaded && state.isOffline)
+                  const OfflineBanner(),
+                Expanded(
+                  child: state is PlotsLoading
+                      ? const LoadingWidget()
+                      : state is PlotsLoaded
+                          ? state.plots.isEmpty
+                              ? EmptyStateWidget(
+                                  message: 'No tienes parcelas registradas',
+                                  icon: Icons.grid_view_outlined,
+                                  actionLabel: 'Agregar parcela',
+                                  onAction: _showCreatePlot,
+                                )
+                              : RefreshIndicator(
+                                  color: AppTheme.primary,
+                                  onRefresh: () async =>
+                                      _plotsBloc.add(LoadPlots(widget.farmId)),
+                                  child: ListView.builder(
+                                    padding: const EdgeInsets.all(16),
+                                    itemCount: state.plots.length,
+                                    itemBuilder: (_, i) => PlotCard(
+                                      plot: state.plots[i],
+                                      onTap: () => context.push(
+                                        '/farms/${widget.farmId}/plots/${state.plots[i].id}/crops',
+                                        extra: state.plots[i].name,
+                                      ),
+                                      onDelete: () =>
+                                          _confirmDelete(state.plots[i]),
+                                    ),
+                                  ),
+                                )
+                          : const SizedBox(),
                 ),
-              );
-            }
-
-            return const SizedBox();
+              ],
+            );
           },
         ),
         floatingActionButton: FloatingActionButton.extended(

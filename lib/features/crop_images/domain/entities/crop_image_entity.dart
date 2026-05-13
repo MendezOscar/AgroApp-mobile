@@ -7,6 +7,7 @@ class CropImageEntity {
   final String? aiDiagnosis;
   final DateTime? takenAt;
   final DateTime createdAt;
+  final bool isPending; // ← nuevo
 
   const CropImageEntity({
     required this.id,
@@ -17,5 +18,6 @@ class CropImageEntity {
     this.aiDiagnosis,
     this.takenAt,
     required this.createdAt,
+    this.isPending = false, // ← default false
   });
 }
