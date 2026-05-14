@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:printing/printing.dart';
 import '../../../../core/di/injection.dart';
+import '../../../../core/services/pdf_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/offline_banner.dart';
+import '../../../farms/data/datasources/farms_remote_datasource.dart';
+import '../../../farms/data/models/farm_model.dart';
+import '../../../plots/data/datasources/plots_remote_datasource.dart';
+import '../../../plots/data/models/plot_model.dart';
 import '../../domain/entities/crop_entity.dart';
 import '../bloc/crop_detail_cubit.dart';
 import '../bloc/crop_detail_state.dart';
@@ -28,6 +34,97 @@ class _CropDetailPageState extends State<CropDetailPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   late final CropDetailCubit _cubit;
+
+  Future<void> _generateReport() async {
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: AppTheme.primary),
+                  SizedBox(height: 16),
+                  Text('Generando reporte...'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Obtener fincas
+      final farmsData = await sl<FarmsRemoteDatasource>().getFarms();
+      if (farmsData.isEmpty) throw Exception('No hay fincas disponibles');
+      final farm = FarmModel.fromJson(farmsData.first);
+
+      // Obtener parcelas de todas las fincas hasta encontrar la del cultivo
+      PlotModel? plot;
+      for (final farmData in farmsData) {
+        final farmId = farmData['id'] as String;
+        final plotsData = await sl<PlotsRemoteDatasource>().getPlots(farmId);
+        for (final plotData in plotsData) {
+          if (plotData['id'] == widget.crop.plotId) {
+            plot = PlotModel.fromJson(plotData);
+            break;
+          }
+        }
+        if (plot != null) break;
+      }
+
+      // Si no encontramos la parcela usar datos básicos
+      plot ??= PlotModel(
+        id: widget.crop.plotId,
+        farmId: farm.id,
+        name: 'Parcela',
+        isActive: true,
+        createdAt: DateTime.now(),
+      );
+
+      // Asegurar que los tabs tengan datos cargados
+      if (_cubit.state.irrigations.isEmpty) {
+        await _cubit.loadIrrigations(widget.crop.id);
+      }
+      if (_cubit.state.fertilizations.isEmpty) {
+        await _cubit.loadFertilizations(widget.crop.id);
+      }
+      if (_cubit.state.labors.isEmpty) {
+        await _cubit.loadLabors(widget.crop.id);
+      }
+
+      final pdfBytes = await PdfService.generateCropReport(
+        farm: farm,
+        plot: plot,
+        crop: widget.crop,
+        irrigations: _cubit.state.irrigations,
+        fertilizations: _cubit.state.fertilizations,
+        labors: _cubit.state.labors,
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      await Printing.layoutPdf(
+        onLayout: (_) async => pdfBytes,
+        name:
+            'AgroApp_${widget.crop.cropType}_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
+      );
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al generar reporte: $e'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -107,6 +204,13 @@ class _CropDetailPageState extends State<CropDetailPage>
           child: NestedScrollView(
             headerSliverBuilder: (_, __) => [
               SliverAppBar(
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
+                    onPressed: _generateReport,
+                    tooltip: 'Generar reporte PDF',
+                  ),
+                ],
                 expandedHeight: 200, // ← aumentar altura
                 pinned: true,
                 backgroundColor: AppTheme.primary,

@@ -6,12 +6,14 @@ class PlotCard extends StatelessWidget {
   final PlotEntity plot;
   final VoidCallback onTap;
   final VoidCallback onDelete;
+  final VoidCallback onSensorsTap;
 
   const PlotCard({
     super.key,
     required this.plot,
     required this.onTap,
     required this.onDelete,
+    required this.onSensorsTap,
   });
 
   @override
@@ -29,27 +31,53 @@ class PlotCard extends StatelessWidget {
           ),
           child: const Icon(Icons.grid_view, color: AppTheme.primary),
         ),
-        title: Text(plot.name,
-            style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          plot.name,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (plot.soilType != null)
-              Text('Suelo: ${plot.soilType}',
-                  style: TextStyle(color: Colors.grey[600])),
+              Text(
+                'Suelo: ${plot.soilType}',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
             if (plot.areaHa != null)
-              Text('${plot.areaHa!.toStringAsFixed(1)} ha',
-                  style: const TextStyle(
-                      color: AppTheme.primary, fontWeight: FontWeight.w500)),
+              Text(
+                '${plot.areaHa!.toStringAsFixed(1)} ha',
+                style: const TextStyle(
+                    color: AppTheme.primary, fontWeight: FontWeight.w500),
+              ),
           ],
         ),
-        trailing: PopupMenuButton(
-          itemBuilder: (_) => [
-            const PopupMenuItem(value: 'delete', child: Text('Eliminar')),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Botón sensores
+            IconButton(
+              icon: const Icon(Icons.sensors, color: AppTheme.primary),
+              onPressed: onSensorsTap,
+              tooltip: 'Ver sensores',
+            ),
+            // Menú opciones
+            PopupMenuButton(
+              itemBuilder: (_) => [
+                const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Eliminar'),
+                      ],
+                    )),
+              ],
+              onSelected: (value) {
+                if (value == 'delete') onDelete();
+              },
+            ),
           ],
-          onSelected: (value) {
-            if (value == 'delete') onDelete();
-          },
         ),
         onTap: onTap,
       ),

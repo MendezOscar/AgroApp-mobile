@@ -41,11 +41,21 @@ class _FarmsPageState extends State<FarmsPage> {
     final isOnline = await ConnectivityService.isOnline();
     if (!isOnline) return;
 
+    // Delay para que la UI cargue primero
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!mounted) return;
     setState(() => _isSyncing = true);
-    await sl<InitialSyncService>().syncAll();
-    if (mounted) {
-      setState(() => _isSyncing = false);
-      _farmsBloc.add(LoadFarms());
+
+    try {
+      await sl<InitialSyncService>().syncAll();
+    } catch (e) {
+      debugPrint('Sync error: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isSyncing = false);
+        _farmsBloc.add(LoadFarms());
+      }
     }
   }
 

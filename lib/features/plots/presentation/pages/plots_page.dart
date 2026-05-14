@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/offline_banner.dart';
+import '../../../sensors/presentation/pages/sensors_page.dart';
 import '../../domain/entities/plot_entity.dart';
 import '../bloc/plots_bloc.dart';
 import '../bloc/plots_event.dart';
@@ -124,6 +125,16 @@ class _PlotsPageState extends State<PlotsPage> {
                                       ),
                                       onDelete: () =>
                                           _confirmDelete(state.plots[i]),
+                                      onSensorsTap: () => Navigator.push(
+                                        // ← nuevo
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => SensorsPage(
+                                            plotId: state.plots[i].id,
+                                            plotName: state.plots[i].name,
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 )

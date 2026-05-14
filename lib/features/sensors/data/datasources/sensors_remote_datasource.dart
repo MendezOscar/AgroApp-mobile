@@ -9,6 +9,12 @@ class SensorsRemoteDatasource {
     return response.data;
   }
 
+  Future<Map<String, dynamic>> createSensorDevice(
+      String plotId, Map<String, dynamic> data) async {
+    final response = await _dio.post('/plots/$plotId/sensors', data: data);
+    return response.data;
+  }
+
   Future<List<dynamic>> getSensorReadings(String deviceId,
       {int limit = 50}) async {
     final response = await _dio
@@ -23,5 +29,11 @@ class SensorsRemoteDatasource {
     } catch (_) {
       return null;
     }
+  }
+
+  Future<Map<String, dynamic>> sendReading(
+      String deviceId, Map<String, dynamic> data) async {
+    final response = await _dio.post('/sensors/$deviceId/readings', data: data);
+    return response.data;
   }
 }

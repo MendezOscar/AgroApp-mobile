@@ -6,6 +6,7 @@ class SensorDeviceEntity {
   final double? lat;
   final double? lng;
   final int? batteryPct;
+  final String? firmwareVer; // ← agregar
   final bool isActive;
   final DateTime? lastSeenAt;
 
@@ -17,6 +18,7 @@ class SensorDeviceEntity {
     this.lat,
     this.lng,
     this.batteryPct,
+    this.firmwareVer,
     required this.isActive,
     this.lastSeenAt,
   });

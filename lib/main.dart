@@ -39,9 +39,10 @@ class _AgroAppState extends State<AgroApp> {
     _authBloc = sl<AuthBloc>()..add(CheckAuthStatus());
 
     // Sincronizar pendientes y datos cuando vuelve la conexión
-    ConnectivityService.onConnectivityChanged.listen((isOnline) {
+    ConnectivityService.onConnectivityChanged.listen((isOnline) async {
       if (isOnline) {
-        debugPrint('Conexión restaurada — sincronizando...');
+        // Esperar antes de sincronizar
+        await Future.delayed(const Duration(seconds: 2));
         sl<SyncService>().syncPending();
         sl<InitialSyncService>().syncAll();
       }

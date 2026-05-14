@@ -9,6 +9,7 @@ class SensorDeviceModel extends SensorDeviceEntity {
     super.lat,
     super.lng,
     super.batteryPct,
+    super.firmwareVer, // ← agregar
     required super.isActive,
     super.lastSeenAt,
   });
@@ -22,6 +23,7 @@ class SensorDeviceModel extends SensorDeviceEntity {
         lat: (json['lat'] as num?)?.toDouble(),
         lng: (json['lng'] as num?)?.toDouble(),
         batteryPct: json['batteryPct'],
+        firmwareVer: json['firmwareVer'], // ← agregar
         isActive: json['isActive'],
         lastSeenAt: json['lastSeenAt'] != null
             ? DateTime.parse(json['lastSeenAt'])

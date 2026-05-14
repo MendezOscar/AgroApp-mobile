@@ -22,12 +22,16 @@ class AuthRepositoryImpl implements AuthRepository {
     final model = AuthModel.fromJson(data);
     await _storage.write(key: AppConstants.tokenKey, value: model.token);
 
-    // Registrar token FCM
+    // Registrar token FCM sin bloquear
     _registerFcmToken();
 
-    // Sync inicial en background — no bloquea el login
-    Future.delayed(const Duration(seconds: 1), () {
-      sl<InitialSyncService>().syncAll();
+    // Sync en background con delay mayor para no bloquear UI
+    Future.delayed(const Duration(seconds: 3), () async {
+      try {
+        await sl<InitialSyncService>().syncAll();
+      } catch (e) {
+        debugPrint('Sync error: $e');
+      }
     });
 
     return model;

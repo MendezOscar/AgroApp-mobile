@@ -13,14 +13,16 @@ class PlotModel extends PlotEntity {
   });
 
   factory PlotModel.fromJson(Map<String, dynamic> json) => PlotModel(
-        id: json['id'],
-        farmId: json['farmId'],
-        name: json['name'],
-        soilType: json['soilType'],
+        id: json['id'] as String,
+        farmId: json['farmId'] as String,
+        name: json['name'] as String,
+        soilType: json['soilType'] as String?,
         areaHa: (json['areaHa'] as num?)?.toDouble(),
-        notes: json['notes'],
-        isActive: json['isActive'],
-        createdAt: DateTime.parse(json['createdAt']),
+        notes: json['notes'] as String?,
+        isActive: json['isActive'] as bool? ?? true,
+        createdAt: json['createdAt'] != null
+            ? DateTime.parse(json['createdAt'] as String)
+            : DateTime.now(),
       );
 
   Map<String, dynamic> toJson() => {
