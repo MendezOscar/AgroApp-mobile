@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/role_helper.dart';
+import '../../../../core/widgets/role_guard.dart';
 import '../../domain/entities/plot_entity.dart';
 
 class PlotCard extends StatelessWidget {
@@ -55,10 +57,13 @@ class PlotCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Botón sensores
-            IconButton(
-              icon: const Icon(Icons.sensors, color: AppTheme.primary),
-              onPressed: onSensorsTap,
-              tooltip: 'Ver sensores',
+            RoleGuard(
+              permission: RoleHelper.canManageSensors,
+              child: IconButton(
+                icon: const Icon(Icons.sensors, color: AppTheme.primary),
+                onPressed: onSensorsTap,
+                tooltip: 'Ver sensores',
+              ),
             ),
             // Menú opciones
             PopupMenuButton(

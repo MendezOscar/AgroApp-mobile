@@ -3,9 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/role_helper.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/offline_banner.dart';
+import '../../../../core/widgets/role_guard.dart';
 import '../../../sensors/presentation/pages/sensors_page.dart';
 import '../../domain/entities/plot_entity.dart';
 import '../bloc/plots_bloc.dart';
@@ -144,12 +146,15 @@ class _PlotsPageState extends State<PlotsPage> {
             );
           },
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          backgroundColor: AppTheme.primary,
-          icon: const Icon(Icons.add, color: Colors.white),
-          label: const Text('Nueva parcela',
-              style: TextStyle(color: Colors.white)),
-          onPressed: _showCreatePlot,
+        floatingActionButton: RoleGuard(
+          permission: RoleHelper.canCreatePlot,
+          child: FloatingActionButton.extended(
+            backgroundColor: AppTheme.primary,
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text('Nueva parcela',
+                style: TextStyle(color: Colors.white)),
+            onPressed: _showCreatePlot,
+          ),
         ),
       ),
     );

@@ -3,9 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/role_helper.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/offline_banner.dart';
+import '../../../../core/widgets/role_guard.dart';
 import '../../domain/entities/crop_entity.dart';
 import '../bloc/crops_bloc.dart';
 import '../bloc/crops_event.dart';
@@ -135,12 +137,15 @@ class _CropsPageState extends State<CropsPage> {
             );
           },
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          backgroundColor: AppTheme.primary,
-          icon: const Icon(Icons.add, color: Colors.white),
-          label: const Text('Nuevo cultivo',
-              style: TextStyle(color: Colors.white)),
-          onPressed: _showCreateCrop,
+        floatingActionButton: RoleGuard(
+          permission: RoleHelper.canCreateCrop,
+          child: FloatingActionButton.extended(
+            backgroundColor: AppTheme.primary,
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text('Nuevo cultivo',
+                style: TextStyle(color: Colors.white)),
+            onPressed: _showCreateCrop,
+          ),
         ),
       ),
     );

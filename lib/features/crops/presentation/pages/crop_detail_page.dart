@@ -5,7 +5,9 @@ import 'package:printing/printing.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/services/pdf_service.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/role_helper.dart';
 import '../../../../core/widgets/offline_banner.dart';
+import '../../../../core/widgets/role_guard.dart';
 import '../../../farms/data/datasources/farms_remote_datasource.dart';
 import '../../../farms/data/models/farm_model.dart';
 import '../../../plots/data/datasources/plots_remote_datasource.dart';
@@ -308,17 +310,21 @@ class _CropDetailPageState extends State<CropDetailPage>
             ),
           ),
         ),
+        // FAB de agregar riego/fertilización/labor
         floatingActionButton: BlocBuilder<CropDetailCubit, CropDetailState>(
           builder: (context, state) {
             if (_tabController.index == 3) return const SizedBox();
-            return FloatingActionButton.extended(
-              backgroundColor: AppTheme.primary,
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: Text(
-                ['Riego', 'Fertilización', 'Labor'][_tabController.index],
-                style: const TextStyle(color: Colors.white),
+            return RoleGuard(
+              permission: RoleHelper.canRegisterActivity,
+              child: FloatingActionButton.extended(
+                backgroundColor: AppTheme.primary,
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: Text(
+                  ['Riego', 'Fertilización', 'Labor'][_tabController.index],
+                  style: const TextStyle(color: Colors.white),
+                ),
+                onPressed: _showAddSheet,
               ),
-              onPressed: _showAddSheet,
             );
           },
         ),
