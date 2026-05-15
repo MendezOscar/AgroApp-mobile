@@ -12,6 +12,7 @@ class MainShell extends StatelessWidget {
     if (location.startsWith('/dashboard')) return 0;
     if (location.startsWith('/farms')) return 1;
     if (location.startsWith('/alerts')) return 2;
+    if (location.startsWith('/profile')) return 3;
     return 0;
   }
 
@@ -34,6 +35,9 @@ class MainShell extends StatelessWidget {
             case 2:
               context.go('/alerts');
               break;
+            case 3:
+              context.go('/profile');
+              break;
           }
         },
         destinations: const [
@@ -51,6 +55,11 @@ class MainShell extends StatelessWidget {
             icon: Icon(Icons.notifications_outlined),
             selectedIcon: Icon(Icons.notifications, color: AppTheme.primary),
             label: 'Alertas',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outlined),
+            selectedIcon: Icon(Icons.person, color: AppTheme.primary),
+            label: 'Perfil',
           ),
         ],
       ),

@@ -154,13 +154,6 @@ class _FarmsPageState extends State<FarmsPage> {
                   ),
                 ),
               const AlertBadge(),
-              IconButton(
-                icon: const Icon(Icons.logout),
-                onPressed: () {
-                  context.read<AuthBloc>().add(LogoutRequested());
-                  context.go('/login');
-                },
-              ),
               FutureBuilder<int>(
                 future: sl<SyncService>().getPendingCount(),
                 builder: (context, snapshot) {

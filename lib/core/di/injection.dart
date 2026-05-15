@@ -35,6 +35,8 @@ import '../../features/plots/presentation/bloc/plots_bloc.dart';
 import '../../features/sensors/data/datasources/sensors_remote_datasource.dart';
 import '../../features/sensors/presentation/bloc/dashboard_cubit.dart';
 import '../../features/sensors/presentation/bloc/sensors_cubit.dart';
+import '../../features/users/data/datasources/users_remote_datasource.dart';
+import '../../features/users/presentation/bloc/users_cubit.dart';
 import '../api/dio_client.dart';
 import '../services/initial_sync_service.dart';
 import '../services/sync_service.dart';
@@ -122,6 +124,11 @@ Future<void> initDependencies() async {
   // ─── Crop Images ─────────────────────────────────────────
   sl.registerLazySingleton<CropImagesLocalRepository>(
       () => CropImagesLocalRepository());
+
+  // ─── Users ───────────────────────────────────────────────
+  sl.registerLazySingleton<UsersRemoteDatasource>(
+      () => UsersRemoteDatasource(sl()));
+  sl.registerFactory<UsersCubit>(() => UsersCubit(sl()));
 
   // ─── Dashboard ────────────────────────────────────────────
   sl.registerFactory<DashboardCubit>(() => DashboardCubit(
