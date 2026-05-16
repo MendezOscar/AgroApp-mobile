@@ -30,10 +30,12 @@ class DashboardCubit extends Cubit<DashboardState> {
         super(const DashboardState());
 
   Future<void> loadDashboard() async {
+    if (isClosed) return;
     emit(state.copyWith(isLoading: true));
     try {
       // Cargar fincas
       final farms = await _farmsDs.getFarms();
+      if (isClosed) return;
       if (farms.isEmpty) {
         emit(state.copyWith(isLoading: false));
         return;
@@ -44,8 +46,10 @@ class DashboardCubit extends Cubit<DashboardState> {
       String? firstDeviceId;
 
       for (final farm in farms) {
+        if (isClosed) return;
         final plots = await _plotsDs.getPlots(farm['id']);
         for (final plot in plots) {
+          if (isClosed) return;
           // Cultivos activos
           final crops = await _cropsDs.getCrops(plot['id']);
           activeCrops += crops.where((c) => c['status'] == 'Active').length;
@@ -67,6 +71,8 @@ class DashboardCubit extends Cubit<DashboardState> {
         }
       }
 
+      if (isClosed) return;
+
       // Cargar lecturas del primer sensor
       SensorReadingEntity? latestReading;
       List<SensorReadingEntity> readings = [];
@@ -82,6 +88,8 @@ class DashboardCubit extends Cubit<DashboardState> {
         readings =
             readingsData.map((r) => SensorReadingModel.fromJson(r)).toList();
       }
+
+      if (isClosed) return;
 
       // Alertas sin leer
       final unreadCount = await _alertsDs.getUnreadCount();

@@ -10,6 +10,7 @@ import 'core/services/sync_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/bloc/auth_event.dart';
+import 'features/auth/presentation/bloc/auth_state.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -41,7 +42,10 @@ class _AgroAppState extends State<AgroApp> {
     // Sincronizar pendientes y datos cuando vuelve la conexión
     ConnectivityService.onConnectivityChanged.listen((isOnline) async {
       if (isOnline) {
-        // Esperar antes de sincronizar
+        // Solo sincronizar si hay usuario autenticado
+        final authState = _authBloc.state;
+        if (authState is! AuthAuthenticated) return;
+
         await Future.delayed(const Duration(seconds: 2));
         sl<SyncService>().syncPending();
         sl<InitialSyncService>().syncAll();

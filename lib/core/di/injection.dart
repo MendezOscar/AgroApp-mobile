@@ -35,6 +35,8 @@ import '../../features/plots/presentation/bloc/plots_bloc.dart';
 import '../../features/sensors/data/datasources/sensors_remote_datasource.dart';
 import '../../features/sensors/presentation/bloc/dashboard_cubit.dart';
 import '../../features/sensors/presentation/bloc/sensors_cubit.dart';
+import '../../features/task/data/datasources/tasks_remote_datasource.dart';
+import '../../features/task/presentation/bloc/tasks_cubit.dart';
 import '../../features/users/data/datasources/users_remote_datasource.dart';
 import '../../features/users/presentation/bloc/users_cubit.dart';
 import '../api/dio_client.dart';
@@ -129,6 +131,11 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<UsersRemoteDatasource>(
       () => UsersRemoteDatasource(sl()));
   sl.registerFactory<UsersCubit>(() => UsersCubit(sl()));
+
+  // ─── Tasks ───────────────────────────────────────────────
+  sl.registerLazySingleton<TasksRemoteDatasource>(
+      () => TasksRemoteDatasource(sl()));
+  sl.registerFactory<TasksCubit>(() => TasksCubit(sl()));
 
   // ─── Dashboard ────────────────────────────────────────────
   sl.registerFactory<DashboardCubit>(() => DashboardCubit(

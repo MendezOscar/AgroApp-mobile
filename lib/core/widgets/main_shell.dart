@@ -11,8 +11,9 @@ class MainShell extends StatelessWidget {
     final location = GoRouterState.of(context).matchedLocation;
     if (location.startsWith('/dashboard')) return 0;
     if (location.startsWith('/farms')) return 1;
-    if (location.startsWith('/alerts')) return 2;
-    if (location.startsWith('/profile')) return 3;
+    if (location.startsWith('/tasks')) return 2;
+    if (location.startsWith('/alerts')) return 3;
+    if (location.startsWith('/profile')) return 4;
     return 0;
   }
 
@@ -33,9 +34,12 @@ class MainShell extends StatelessWidget {
               context.go('/farms');
               break;
             case 2:
-              context.go('/alerts');
+              context.go('/tasks');
               break;
             case 3:
+              context.go('/alerts');
+              break;
+            case 4:
               context.go('/profile');
               break;
           }
@@ -50,6 +54,11 @@ class MainShell extends StatelessWidget {
             icon: Icon(Icons.agriculture_outlined),
             selectedIcon: Icon(Icons.agriculture, color: AppTheme.primary),
             label: 'Fincas',
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.task_outlined),
+            selectedIcon: Icon(Icons.task, color: AppTheme.primary),
+            label: 'Tareas',
           ),
           NavigationDestination(
             icon: Icon(Icons.notifications_outlined),
