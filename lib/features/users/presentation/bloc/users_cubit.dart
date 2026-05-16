@@ -1,9 +1,9 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/bloc/safe_cubit.dart';
 import '../../data/datasources/users_remote_datasource.dart';
 import '../../data/models/user_model.dart';
 import 'users_state.dart';
 
-class UsersCubit extends Cubit<UsersState> {
+class UsersCubit extends SafeCubit<UsersState> {
   final UsersRemoteDatasource _datasource;
 
   UsersCubit(this._datasource) : super(const UsersState());

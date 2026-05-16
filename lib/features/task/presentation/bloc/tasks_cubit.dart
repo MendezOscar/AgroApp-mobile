@@ -1,9 +1,9 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/bloc/safe_cubit.dart';
 import '../../data/datasources/tasks_remote_datasource.dart';
 import '../../data/models/task_model.dart';
 import 'tasks_state.dart';
 
-class TasksCubit extends Cubit<TasksState> {
+class TasksCubit extends SafeCubit<TasksState> {
   final TasksRemoteDatasource _datasource;
 
   TasksCubit(this._datasource) : super(const TasksState());

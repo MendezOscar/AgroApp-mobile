@@ -1,10 +1,10 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/bloc/safe_cubit.dart';
 import '../../data/datasources/sensors_remote_datasource.dart';
 import '../../data/models/sensor_device_model.dart';
 import '../../data/models/sensor_reading_model.dart';
 import 'sensors_state.dart';
 
-class SensorsCubit extends Cubit<SensorsState> {
+class SensorsCubit extends SafeCubit<SensorsState> {
   final SensorsRemoteDatasource _datasource;
 
   SensorsCubit(this._datasource) : super(const SensorsState());

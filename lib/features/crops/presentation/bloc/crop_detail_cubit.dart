@@ -1,4 +1,4 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/bloc/safe_cubit.dart';
 import '../../../../core/services/connectivity_service.dart';
 import '../../../crop_images/data/datasources/crop_images_remote_datasource.dart';
 import '../../../crop_images/data/models/crop_image_model.dart';
@@ -15,7 +15,7 @@ import '../../../labor/data/models/labor_model.dart';
 import '../../../labor/data/repositories/labor_local_repository.dart';
 import 'crop_detail_state.dart';
 
-class CropDetailCubit extends Cubit<CropDetailState> {
+class CropDetailCubit extends SafeCubit<CropDetailState> {
   final IrrigationRemoteDatasource _irrigationDs;
   final FertilizationRemoteDatasource _fertilizationDs;
   final LaborRemoteDatasource _laborDs;

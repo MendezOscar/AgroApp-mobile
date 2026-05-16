@@ -1,11 +1,11 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/bloc/safe_cubit.dart';
 import '../../../../core/services/connectivity_service.dart';
 import '../../data/datasources/alerts_remote_datasource.dart';
 import '../../data/models/alert_model.dart';
 import '../../data/repositories/alerts_local_repository.dart';
 import 'alerts_state.dart';
 
-class AlertsCubit extends Cubit<AlertsState> {
+class AlertsCubit extends SafeCubit<AlertsState> {
   final AlertsRemoteDatasource _datasource;
   final AlertsLocalRepository _localRepository;
 

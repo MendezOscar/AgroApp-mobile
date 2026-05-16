@@ -1,4 +1,4 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/bloc/safe_cubit.dart';
 import '../../../alerts/data/datasources/alerts_remote_datasource.dart';
 import '../../../farms/data/datasources/farms_remote_datasource.dart';
 import '../../../plots/data/datasources/plots_remote_datasource.dart';
@@ -9,7 +9,7 @@ import '../../../sensors/data/models/sensor_reading_model.dart';
 import '../../domain/entities/sensor_reading_entity.dart';
 import 'dashboard_state.dart';
 
-class DashboardCubit extends Cubit<DashboardState> {
+class DashboardCubit extends SafeCubit<DashboardState> {
   final FarmsRemoteDatasource _farmsDs;
   final PlotsRemoteDatasource _plotsDs;
   final CropsRemoteDatasource _cropsDs;

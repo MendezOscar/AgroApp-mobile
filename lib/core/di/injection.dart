@@ -35,6 +35,8 @@ import '../../features/plots/presentation/bloc/plots_bloc.dart';
 import '../../features/sensors/data/datasources/sensors_remote_datasource.dart';
 import '../../features/sensors/presentation/bloc/dashboard_cubit.dart';
 import '../../features/sensors/presentation/bloc/sensors_cubit.dart';
+import '../../features/shifts/data/datasources/shifts_remote_datasource.dart';
+import '../../features/shifts/presentation/bloc/shifts_cubit.dart';
 import '../../features/task/data/datasources/tasks_remote_datasource.dart';
 import '../../features/task/presentation/bloc/tasks_cubit.dart';
 import '../../features/users/data/datasources/users_remote_datasource.dart';
@@ -136,6 +138,11 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<TasksRemoteDatasource>(
       () => TasksRemoteDatasource(sl()));
   sl.registerFactory<TasksCubit>(() => TasksCubit(sl()));
+
+  // ─── Shifts ──────────────────────────────────────────────
+  sl.registerLazySingleton<ShiftsRemoteDatasource>(
+      () => ShiftsRemoteDatasource(sl()));
+  sl.registerFactory<ShiftsCubit>(() => ShiftsCubit(sl()));
 
   // ─── Dashboard ────────────────────────────────────────────
   sl.registerFactory<DashboardCubit>(() => DashboardCubit(
