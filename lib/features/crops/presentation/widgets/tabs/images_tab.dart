@@ -222,11 +222,13 @@ class ImagesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocConsumer<CropDetailCubit, CropDetailState>(
       listenWhen: (previous, current) =>
-          previous.isAnalyzing &&
-          !current.isAnalyzing &&
-          current.aiDiagnosis != null,
+          current.aiDiagnosis != null &&
+          previous.aiDiagnosis == null &&
+          !current.isAnalyzing,
       listener: (context, state) {
-        _showDiagnosisSheet(context, state.aiDiagnosis!);
+        if (state.aiDiagnosis != null) {
+          _showDiagnosisSheet(context, state.aiDiagnosis!);
+        }
       },
       builder: (context, state) {
         if (state.isAnalyzing) {
@@ -394,6 +396,45 @@ class ImagesTab extends StatelessWidget {
                                     ),
                             ),
 
+                            // Agrega esto en el Stack, después de la imagen y antes de los badges:
+                            BlocBuilder<CropDetailCubit, CropDetailState>(
+                              builder: (context, state) {
+                                if (!state.isAnalyzing) return const SizedBox();
+                                return Positioned.fill(
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.5),
+                                      child: const Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          SizedBox(
+                                            width: 28,
+                                            height: 28,
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 2.5,
+                                            ),
+                                          ),
+                                          SizedBox(height: 8),
+                                          Text(
+                                            '🤖 Analizando...',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+
                             // Badge pendiente
                             if (isLocal)
                               Positioned(
@@ -503,35 +544,60 @@ class ImagesTab extends StatelessWidget {
 
                             // Botón análisis IA
                             if (!isLocal)
-                              Positioned(
-                                bottom: 6,
-                                right: 6,
-                                child: GestureDetector(
-                                  onTap: () =>
-                                      _showAnalysis(context, cropId, image),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: BoxDecoration(
-                                      color: hasAi
-                                          ? Colors.green
-                                          : AppTheme.primary,
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black
-                                              .withValues(alpha: 0.2),
-                                          blurRadius: 4,
+                              // Reemplaza el botón de análisis IA en el Stack:
+                              if (!isLocal)
+                                Positioned(
+                                  bottom: 6,
+                                  right: 6,
+                                  child: BlocBuilder<CropDetailCubit,
+                                      CropDetailState>(
+                                    builder: (context, state) {
+                                      // Verificar si esta imagen específica está siendo analizada
+                                      final isThisAnalyzing = state.isAnalyzing;
+
+                                      return GestureDetector(
+                                        onTap: isThisAnalyzing
+                                            ? null
+                                            : () => _showAnalysis(
+                                                context, cropId, image),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(
+                                            color: isThisAnalyzing
+                                                ? Colors.orange
+                                                : hasAi
+                                                    ? Colors.green
+                                                    : AppTheme.primary,
+                                            shape: BoxShape.circle,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                  color: Colors.black
+                                                      .withValues(alpha: 0.2),
+                                                  blurRadius: 4),
+                                            ],
+                                          ),
+                                          child: isThisAnalyzing
+                                              ? const SizedBox(
+                                                  width: 16,
+                                                  height: 16,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    color: Colors.white,
+                                                    strokeWidth: 2,
+                                                  ),
+                                                )
+                                              : Icon(
+                                                  hasAi
+                                                      ? Icons.psychology
+                                                      : Icons.search,
+                                                  color: Colors.white,
+                                                  size: 16,
+                                                ),
                                         ),
-                                      ],
-                                    ),
-                                    child: Icon(
-                                      hasAi ? Icons.psychology : Icons.search,
-                                      color: Colors.white,
-                                      size: 16,
-                                    ),
+                                      );
+                                    },
                                   ),
                                 ),
-                              ),
 
                             // Categoría
                             if (image.category != null)

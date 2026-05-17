@@ -319,15 +319,11 @@ class CropDetailCubit extends SafeCubit<CropDetailState> {
     try {
       final result = await _imagesDs.analyzeImage(cropId, imageId);
       await loadImages(cropId);
+      // ← Emitir con el diagnóstico y ya, sin limpiar después
       emit(state.copyWith(
         isAnalyzing: false,
         aiDiagnosis: AiDiagnosisModel.fromJson(result),
       ));
-      // Limpiar después de emitir para no repetir
-      await Future.delayed(const Duration(milliseconds: 500));
-      if (!isClosed) {
-        emit(state.copyWith(aiDiagnosis: null));
-      }
     } catch (e) {
       emit(state.copyWith(
           isAnalyzing: false, error: 'Error al analizar imagen'));
