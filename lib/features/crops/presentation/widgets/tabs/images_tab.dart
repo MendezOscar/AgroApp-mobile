@@ -221,11 +221,12 @@ class ImagesTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<CropDetailCubit, CropDetailState>(
+      listenWhen: (previous, current) =>
+          previous.isAnalyzing &&
+          !current.isAnalyzing &&
+          current.aiDiagnosis != null,
       listener: (context, state) {
-        // Mostrar diagnóstico automáticamente cuando termina
-        if (!state.isAnalyzing && state.aiDiagnosis != null) {
-          _showDiagnosisSheet(context, state.aiDiagnosis!);
-        }
+        _showDiagnosisSheet(context, state.aiDiagnosis!);
       },
       builder: (context, state) {
         if (state.isAnalyzing) {
