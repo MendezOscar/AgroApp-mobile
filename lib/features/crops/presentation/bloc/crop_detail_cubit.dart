@@ -13,6 +13,7 @@ import '../../../irrigation/data/repositories/irrigation_local_repository.dart';
 import '../../../labor/data/datasources/labor_remote_datasource.dart';
 import '../../../labor/data/models/labor_model.dart';
 import '../../../labor/data/repositories/labor_local_repository.dart';
+import '../../data/models/ai_diagnosis_model.dart';
 import 'crop_detail_state.dart';
 
 class CropDetailCubit extends SafeCubit<CropDetailState> {
@@ -310,6 +311,21 @@ class CropDetailCubit extends SafeCubit<CropDetailState> {
       await loadImages(cropId);
     } catch (e) {
       emit(state.copyWith(error: 'Error al eliminar imagen'));
+    }
+  }
+
+  Future<void> analyzeImage(String cropId, String imageId) async {
+    emit(state.copyWith(isAnalyzing: true, error: null));
+    try {
+      final result = await _imagesDs.analyzeImage(cropId, imageId);
+      await loadImages(cropId); // recargar para mostrar badge "Analizada"
+      emit(state.copyWith(
+        isAnalyzing: false,
+        aiDiagnosis: AiDiagnosisModel.fromJson(result),
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+          isAnalyzing: false, error: 'Error al analizar imagen'));
     }
   }
 

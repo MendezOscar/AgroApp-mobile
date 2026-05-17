@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../../core/theme/app_theme.dart';
+import '../../../data/models/ai_diagnosis_model.dart';
 import '../../bloc/crop_detail_cubit.dart';
 import '../../bloc/crop_detail_state.dart';
 
@@ -24,13 +26,240 @@ class ImagesTab extends StatelessWidget {
     }
   }
 
+  void _showAnalysis(BuildContext context, String cropId, dynamic image) {
+    if (image.aiDiagnosis != null) {
+      try {
+        final diagnosis =
+            AiDiagnosisModel.fromJson(jsonDecode(image.aiDiagnosis as String));
+        _showDiagnosisSheet(context, diagnosis);
+      } catch (_) {
+        _confirmAnalysis(context, cropId, image.id);
+      }
+    } else {
+      _confirmAnalysis(context, cropId, image.id);
+    }
+  }
+
+  void _confirmAnalysis(BuildContext context, String cropId, String imageId) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Row(
+          children: [
+            Text('🤖', style: TextStyle(fontSize: 24)),
+            SizedBox(width: 8),
+            Text('Analizar con IA'),
+          ],
+        ),
+        content: const Text(
+          '¿Deseas analizar esta imagen para detectar '
+          'enfermedades y obtener recomendaciones '
+          'de tratamiento?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.read<CropDetailCubit>().analyzeImage(cropId, imageId);
+            },
+            child: const Text('Analizar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDiagnosisSheet(BuildContext context, AiDiagnosisModel diagnosis) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.95,
+        minChildSize: 0.5,
+        expand: false,
+        builder: (_, controller) => SingleChildScrollView(
+          controller: controller,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Estado general
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: diagnosis.statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: diagnosis.statusColor.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      diagnosis.statusIcon,
+                      style: const TextStyle(fontSize: 36),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      diagnosis.statusLabel,
+                      style: TextStyle(
+                        color: diagnosis.statusColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${diagnosis.condition} — '
+                      '${diagnosis.confidence.toStringAsFixed(1)}% confianza',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Descripción
+              const Text(
+                'Descripción',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                diagnosis.description,
+                style: TextStyle(color: Colors.grey[700], fontSize: 13),
+              ),
+              const SizedBox(height: 20),
+
+              // Recomendaciones
+              const Text(
+                'Recomendaciones',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+              const SizedBox(height: 8),
+              ...diagnosis.recommendations.map(
+                (rec) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.only(top: 4, right: 8),
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: AppTheme.primary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          rec,
+                          style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 13,
+                              height: 1.4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, String cropId, String imageId) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Eliminar foto'),
+        content: const Text('¿Estás seguro de eliminar esta foto?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              context.read<CropDetailCubit>().deleteImage(cropId, imageId);
+              Navigator.pop(context);
+            },
+            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<CropDetailCubit, CropDetailState>(
+    return BlocConsumer<CropDetailCubit, CropDetailState>(
+      listener: (context, state) {
+        // Mostrar diagnóstico automáticamente cuando termina
+        if (!state.isAnalyzing && state.aiDiagnosis != null) {
+          _showDiagnosisSheet(context, state.aiDiagnosis!);
+        }
+      },
       builder: (context, state) {
+        if (state.isAnalyzing) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(color: AppTheme.primary),
+                SizedBox(height: 16),
+                Text(
+                  '🤖 Analizando imagen con IA...',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w500, color: AppTheme.primary),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Esto puede tardar hasta 30 segundos',
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ],
+            ),
+          );
+        }
         if (state.isLoadingImages) {
           return const Center(
-            child: CircularProgressIndicator(color: AppTheme.primary),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(color: AppTheme.primary),
+                SizedBox(height: 16),
+                Text('Analizando imagen con IA...',
+                    style: TextStyle(color: Colors.grey)),
+              ],
+            ),
           );
         }
 
@@ -62,7 +291,7 @@ class ImagesTab extends StatelessWidget {
               ),
             ),
 
-            // Indicador offline con pendientes
+            // Banner offline
             if (state.isOffline)
               Padding(
                 padding:
@@ -75,8 +304,10 @@ class ImagesTab extends StatelessWidget {
                     Expanded(
                       child: Text(
                         state.images.isEmpty
-                            ? 'Sin conexión — las fotos se subirán cuando tengas internet'
-                            : '${state.images.where((i) => i.isPending).length} foto(s) pendiente(s) de subir',
+                            ? 'Sin conexión — las fotos se '
+                                'subirán cuando tengas internet'
+                            : '${state.images.where((i) => i.isPending).length} '
+                                'foto(s) pendiente(s) de subir',
                         style: const TextStyle(
                             color: Colors.orange,
                             fontSize: 12,
@@ -105,7 +336,8 @@ class ImagesTab extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Toma una foto para registrar el estado del cultivo',
+                            'Toma una foto para registrar '
+                            'el estado del cultivo',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                                 color: Colors.grey[500], fontSize: 12),
@@ -125,6 +357,7 @@ class ImagesTab extends StatelessWidget {
                       itemBuilder: (_, i) {
                         final image = state.images[i];
                         final isLocal = image.isPending;
+                        final hasAi = image.aiDiagnosis != null;
 
                         return Stack(
                           fit: StackFit.expand,
@@ -197,7 +430,44 @@ class ImagesTab extends StatelessWidget {
                                 ),
                               ),
 
-                            // Botón acción (eliminar o esperar)
+                            // Badge diagnóstico IA
+                            if (hasAi && !isLocal)
+                              Positioned(
+                                top: 6,
+                                left: 6,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade700,
+                                    borderRadius: BorderRadius.circular(6),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color:
+                                            Colors.black.withValues(alpha: 0.2),
+                                        blurRadius: 4,
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text('🤖',
+                                          style: TextStyle(fontSize: 10)),
+                                      SizedBox(width: 3),
+                                      Text(
+                                        'Analizada',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                            // Botón eliminar / pendiente
                             Positioned(
                               top: 6,
                               right: 6,
@@ -230,6 +500,38 @@ class ImagesTab extends StatelessWidget {
                               ),
                             ),
 
+                            // Botón análisis IA
+                            if (!isLocal)
+                              Positioned(
+                                bottom: 6,
+                                right: 6,
+                                child: GestureDetector(
+                                  onTap: () =>
+                                      _showAnalysis(context, cropId, image),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: hasAi
+                                          ? Colors.green
+                                          : AppTheme.primary,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black
+                                              .withValues(alpha: 0.2),
+                                          blurRadius: 4,
+                                        ),
+                                      ],
+                                    ),
+                                    child: Icon(
+                                      hasAi ? Icons.psychology : Icons.search,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+
                             // Categoría
                             if (image.category != null)
                               Positioned(
@@ -246,26 +548,6 @@ class ImagesTab extends StatelessWidget {
                                     image.category!,
                                     style: const TextStyle(
                                         color: Colors.white, fontSize: 10),
-                                  ),
-                                ),
-                              ),
-
-                            // Diagnóstico IA
-                            if (image.aiDiagnosis != null && !isLocal)
-                              Positioned(
-                                bottom: 6,
-                                right: 6,
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        AppTheme.primary.withValues(alpha: 0.9),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.psychology,
-                                    color: Colors.white,
-                                    size: 14,
                                   ),
                                 ),
                               ),
@@ -288,29 +570,6 @@ class ImagesTab extends StatelessWidget {
       ),
       child: const Center(
         child: Icon(Icons.broken_image, color: Colors.grey, size: 32),
-      ),
-    );
-  }
-
-  void _confirmDelete(BuildContext context, String cropId, String imageId) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Eliminar foto'),
-        content: const Text('¿Estás seguro de eliminar esta foto?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () {
-              context.read<CropDetailCubit>().deleteImage(cropId, imageId);
-              Navigator.pop(context);
-            },
-            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
-          ),
-        ],
       ),
     );
   }

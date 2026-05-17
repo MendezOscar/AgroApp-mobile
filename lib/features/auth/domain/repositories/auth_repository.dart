@@ -10,4 +10,5 @@ abstract class AuthRepository {
   });
   Future<void> logout();
   Future<String?> getToken();
+  Future<AuthEntity?> getSavedUser(); // ← nuevo
 }

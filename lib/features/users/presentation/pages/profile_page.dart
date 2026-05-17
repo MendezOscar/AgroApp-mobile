@@ -19,6 +19,14 @@ class ProfilePage extends StatelessWidget {
     // Leer el estado directamente
     final authState = context.watch<AuthBloc>().state;
 
+    if (authState is AuthInitial || authState is AuthLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: AppTheme.primary),
+        ),
+      );
+    }
+
     if (authState is! AuthAuthenticated) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),

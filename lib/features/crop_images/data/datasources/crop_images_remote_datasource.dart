@@ -31,4 +31,10 @@ class CropImagesRemoteDatasource {
   Future<void> deleteImage(String cropId, String id) async {
     await _dio.delete('/crops/$cropId/images/$id');
   }
+
+  Future<Map<String, dynamic>> analyzeImage(
+      String cropId, String imageId) async {
+    final response = await _dio.post('/crops/$cropId/images/$imageId/analyze');
+    return response.data;
+  }
 }

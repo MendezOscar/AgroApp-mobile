@@ -15,10 +15,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Future<void> _onCheckAuthStatus(
       CheckAuthStatus event, Emitter<AuthState> emit) async {
-    final token = await _repository.getToken();
-    if (token != null && token.isNotEmpty) {
-      emit(AuthAuthenticated(AuthUserData(token: token)));
-    } else {
+    try {
+      final user = await _repository.getSavedUser();
+      if (user != null) {
+        emit(AuthAuthenticated(user));
+      } else {
+        emit(AuthUnauthenticated());
+      }
+    } catch (_) {
       emit(AuthUnauthenticated());
     }
   }

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../../core/api/dio_client.dart';
@@ -14,6 +16,9 @@ class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDatasource _datasource;
   final FlutterSecureStorage _storage;
 
+  static const _tokenKey = 'auth_token';
+  static const _userKey = 'auth_user';
+
   AuthRepositoryImpl(this._datasource, this._storage);
 
   @override
@@ -21,6 +26,18 @@ class AuthRepositoryImpl implements AuthRepository {
     final data = await _datasource.login(email, password);
     final model = AuthModel.fromJson(data);
     await _storage.write(key: AppConstants.tokenKey, value: model.token);
+
+    // Guardar token Y datos del usuario
+    await _storage.write(key: _tokenKey, value: model.token);
+    await _storage.write(
+        key: _userKey,
+        value: jsonEncode({
+          'token': model.token,
+          'name': model.name,
+          'email': model.email,
+          'role': model.role,
+          'tenantId': model.tenantId,
+        }));
 
     // Registrar token FCM sin bloquear
     _registerFcmToken();
@@ -73,8 +90,20 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<AuthEntity?> getSavedUser() async {
+    final userJson = await _storage.read(key: _userKey);
+    if (userJson == null) return null;
+    try {
+      final map = jsonDecode(userJson) as Map<String, dynamic>;
+      return AuthModel.fromJson(map);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
   Future<void> logout() async {
-    await _storage.delete(key: AppConstants.tokenKey);
+    await _storage.delete(key: _tokenKey);
   }
 
   @override
