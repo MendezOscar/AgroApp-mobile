@@ -10,6 +10,7 @@ import '../../../../core/widgets/offline_banner.dart';
 import '../../../../core/widgets/role_guard.dart';
 import '../../../farms/data/datasources/farms_remote_datasource.dart';
 import '../../../farms/data/models/farm_model.dart';
+import '../../../phenology/presentation/bloc/phenology_cubit.dart';
 import '../../../plots/data/datasources/plots_remote_datasource.dart';
 import '../../../plots/data/models/plot_model.dart';
 import '../../domain/entities/crop_entity.dart';
@@ -22,6 +23,7 @@ import '../widgets/tabs/labor_tab.dart';
 import '../widgets/sheets/add_fertilization_sheet.dart';
 import '../widgets/sheets/add_irrigation_sheet.dart';
 import '../widgets/sheets/add_labor_sheet.dart';
+import '../../../phenology/presentation/pages/phenology_page.dart';
 
 class CropDetailPage extends StatefulWidget {
   final CropEntity crop;
@@ -131,14 +133,14 @@ class _CropDetailPageState extends State<CropDetailPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _cubit = sl<CropDetailCubit>();
 
-    // Cargar tab inicial
     _cubit.loadIrrigations(widget.crop.id);
 
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return;
+      setState(() {}); // ← agregar esto para forzar rebuild del FAB
       switch (_tabController.index) {
         case 0:
           _cubit.loadIrrigations(widget.crop.id);
@@ -151,6 +153,8 @@ class _CropDetailPageState extends State<CropDetailPage>
           break;
         case 3:
           _cubit.loadImages(widget.crop.id);
+          break;
+        case 4:
           break;
       }
     });
@@ -282,6 +286,9 @@ class _CropDetailPageState extends State<CropDetailPage>
                     Tab(
                         icon: Icon(Icons.photo_library, size: 20),
                         text: 'Fotos'),
+                    Tab(
+                        icon: Icon(Icons.timeline, size: 20),
+                        text: 'Fenología'),
                   ],
                 ),
               ),
@@ -303,6 +310,15 @@ class _CropDetailPageState extends State<CropDetailPage>
                       FertilizationTab(cropId: widget.crop.id),
                       LaborTab(cropId: widget.crop.id),
                       ImagesTab(cropId: widget.crop.id),
+                      BlocProvider(
+                        // ← 5to
+                        create: (_) => sl<PhenologyCubit>(),
+                        child: PhenologyPage(
+                          cropId: widget.crop.id,
+                          cropType: widget.crop.cropType,
+                          embedded: true,
+                        ),
+                      )
                     ],
                   ),
                 ),
@@ -313,7 +329,9 @@ class _CropDetailPageState extends State<CropDetailPage>
         // FAB de agregar riego/fertilización/labor
         floatingActionButton: BlocBuilder<CropDetailCubit, CropDetailState>(
           builder: (context, state) {
-            if (_tabController.index == 3) return const SizedBox();
+            // Ocultar en Fotos (3) y Fenología (4)
+            if (_tabController.index >= 3) return const SizedBox();
+
             return RoleGuard(
               permission: RoleHelper.canRegisterActivity,
               child: FloatingActionButton.extended(

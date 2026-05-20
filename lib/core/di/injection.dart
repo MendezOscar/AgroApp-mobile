@@ -27,6 +27,8 @@ import '../../features/irrigation/data/datasources/irrigation_remote_datasource.
 import '../../features/irrigation/data/repositories/irrigation_local_repository.dart';
 import '../../features/labor/data/datasources/labor_remote_datasource.dart';
 import '../../features/labor/data/repositories/labor_local_repository.dart';
+import '../../features/phenology/data/datasources/phenology_remote_datasource.dart';
+import '../../features/phenology/presentation/bloc/phenology_cubit.dart';
 import '../../features/plots/data/datasources/plots_remote_datasource.dart';
 import '../../features/plots/data/repositories/plots_local_repository.dart';
 import '../../features/plots/data/repositories/plots_repository_impl.dart';
@@ -143,6 +145,11 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<ShiftsRemoteDatasource>(
       () => ShiftsRemoteDatasource(sl()));
   sl.registerFactory<ShiftsCubit>(() => ShiftsCubit(sl()));
+
+  // ─── Phenology ───────────────────────────────────────────
+  sl.registerLazySingleton<PhenologyRemoteDatasource>(
+      () => PhenologyRemoteDatasource(sl()));
+  sl.registerFactory<PhenologyCubit>(() => PhenologyCubit(sl()));
 
   // ─── Dashboard ────────────────────────────────────────────
   sl.registerFactory<DashboardCubit>(() => DashboardCubit(
