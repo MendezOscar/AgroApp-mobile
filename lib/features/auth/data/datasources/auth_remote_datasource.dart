@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 
 class AuthRemoteDatasource {
   final Dio _dio;
@@ -11,6 +12,14 @@ class AuthRemoteDatasource {
       'password': password,
     });
     return response.data;
+  }
+
+  Future<void> logout(String refreshToken) async {
+    try {
+      await _dio.post('/auth/logout', data: {'refreshToken': refreshToken});
+    } catch (e) {
+      debugPrint('Logout API error: $e');
+    }
   }
 
   Future<Map<String, dynamic>> register({

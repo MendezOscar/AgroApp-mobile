@@ -3,6 +3,7 @@ import '../../domain/entities/auth_entity.dart';
 class AuthModel extends AuthEntity {
   const AuthModel({
     required super.token,
+    required super.refreshToken, // ← nuevo
     required super.name,
     required super.email,
     required super.role,
@@ -10,10 +11,11 @@ class AuthModel extends AuthEntity {
   });
 
   factory AuthModel.fromJson(Map<String, dynamic> json) => AuthModel(
-        token: json['token'],
-        name: json['name'],
-        email: json['email'],
-        role: json['role'],
-        tenantId: json['tenantId'],
+        token: json['accessToken'] ?? json['token'] ?? '',
+        refreshToken: json['refreshToken'] ?? '', // ← nuevo
+        name: json['name'] ?? '',
+        email: json['email'] ?? '',
+        role: json['role'] ?? 'Viewer',
+        tenantId: json['tenantId'] ?? '',
       );
 }

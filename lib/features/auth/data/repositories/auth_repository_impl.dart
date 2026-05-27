@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../../core/api/dio_client.dart';
@@ -17,6 +16,7 @@ class AuthRepositoryImpl implements AuthRepository {
   final FlutterSecureStorage _storage;
 
   static const _tokenKey = 'auth_token';
+  static const _refreshTokenKey = 'auth_refresh_token'; // ← nuevo
   static const _userKey = 'auth_user';
 
   AuthRepositoryImpl(this._datasource, this._storage);
@@ -25,24 +25,28 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<AuthEntity> login(String email, String password) async {
     final data = await _datasource.login(email, password);
     final model = AuthModel.fromJson(data);
-    await _storage.write(key: AppConstants.tokenKey, value: model.token);
 
-    // Guardar token Y datos del usuario
+    // Guardar access token
+    await _storage.write(key: AppConstants.tokenKey, value: model.token);
     await _storage.write(key: _tokenKey, value: model.token);
+
+    // Guardar refresh token ← nuevo
+    await _storage.write(key: _refreshTokenKey, value: model.refreshToken);
+
+    // Guardar datos del usuario
     await _storage.write(
         key: _userKey,
         value: jsonEncode({
           'token': model.token,
+          'refreshToken': model.refreshToken, // ← nuevo
           'name': model.name,
           'email': model.email,
           'role': model.role,
           'tenantId': model.tenantId,
         }));
 
-    // Registrar token FCM sin bloquear
     _registerFcmToken();
 
-    // Sync en background con delay mayor para no bloquear UI
     Future.delayed(const Duration(seconds: 3), () async {
       try {
         await sl<InitialSyncService>().syncAll();
@@ -52,23 +56,6 @@ class AuthRepositoryImpl implements AuthRepository {
     });
 
     return model;
-  }
-
-  void _registerFcmToken() async {
-    try {
-      final token = await NotificationService.getToken();
-      if (token != null) {
-        // Necesitamos Dio con el token ya guardado
-        final dio = DioClient.createDio(_storage);
-        await dio.post('/notifications/fcm-token', data: {
-          'token': token,
-          'platform': 'mobile',
-        });
-      }
-    } catch (e) {
-      // No bloqueamos el login si falla el registro del token
-      debugPrint('FCM token registration failed: $e');
-    }
   }
 
   @override
@@ -85,7 +72,22 @@ class AuthRepositoryImpl implements AuthRepository {
       password: password,
     );
     final model = AuthModel.fromJson(data);
+
+    // Guardar ambos tokens ← actualizado
     await _storage.write(key: AppConstants.tokenKey, value: model.token);
+    await _storage.write(key: _tokenKey, value: model.token);
+    await _storage.write(key: _refreshTokenKey, value: model.refreshToken);
+    await _storage.write(
+        key: _userKey,
+        value: jsonEncode({
+          'token': model.token,
+          'refreshToken': model.refreshToken,
+          'name': model.name,
+          'email': model.email,
+          'role': model.role,
+          'tenantId': model.tenantId,
+        }));
+
     return model;
   }
 
@@ -103,11 +105,44 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> logout() async {
+    // Revocar refresh token en el backend
+    try {
+      final refreshToken = await _storage.read(key: _refreshTokenKey);
+      if (refreshToken != null) {
+        await _datasource.logout(refreshToken);
+      }
+    } catch (e) {
+      debugPrint('Logout error: $e');
+    }
+
+    // Limpiar storage
     await _storage.delete(key: _tokenKey);
+    await _storage.delete(key: _refreshTokenKey); // ← nuevo
+    await _storage.delete(key: _userKey);
+    await _storage.delete(key: AppConstants.tokenKey);
   }
 
   @override
   Future<String?> getToken() async {
     return await _storage.read(key: AppConstants.tokenKey);
+  }
+
+  Future<String?> getRefreshToken() async {
+    return await _storage.read(key: _refreshTokenKey);
+  }
+
+  void _registerFcmToken() async {
+    try {
+      final token = await NotificationService.getToken();
+      if (token != null) {
+        final dio = DioClient.createDio(_storage);
+        await dio.post('/notifications/fcm-token', data: {
+          'token': token,
+          'platform': 'mobile',
+        });
+      }
+    } catch (e) {
+      debugPrint('FCM token registration failed: $e');
+    }
   }
 }

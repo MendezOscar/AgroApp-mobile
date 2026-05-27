@@ -1,11 +1,10 @@
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/auth_entity.dart';
 
-// Clase auxiliar liviana para el check de token
 class AuthUserData extends AuthEntity {
-  const AuthUserData({required String token})
+  const AuthUserData({required super.token})
       : super(
-          token: token,
+          refreshToken: '',
           name: '',
           email: '',
           role: '',
