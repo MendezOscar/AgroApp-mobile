@@ -15,13 +15,56 @@ class LocalDatabase {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
   }
 
   static Future<void> _onCreate(Database db, int version) async {
+    await db.execute('''
+  CREATE TABLE IF NOT EXISTS tasks_cache (
+    id TEXT PRIMARY KEY,
+    assigned_to TEXT NOT NULL,
+    assignee_name TEXT NOT NULL,
+    created_by TEXT NOT NULL,
+    creator_name TEXT NOT NULL,
+    plot_id TEXT,
+    plot_name TEXT,
+    crop_id TEXT,
+    crop_name TEXT,
+    title TEXT NOT NULL,
+    description TEXT,
+    priority TEXT NOT NULL,
+    status TEXT NOT NULL,
+    task_type TEXT NOT NULL,
+    due_date TEXT NOT NULL,
+    completed_at TEXT,
+    notes TEXT,
+    created_at TEXT NOT NULL,
+    synced_at TEXT NOT NULL
+  )
+''');
+
+    await db.execute('''
+  CREATE TABLE IF NOT EXISTS occurrences_cache (
+    id TEXT PRIMARY KEY,
+    template_id TEXT NOT NULL,
+    template_title TEXT NOT NULL,
+    task_type TEXT NOT NULL,
+    priority TEXT NOT NULL,
+    assigned_to TEXT,
+    assignee_name TEXT,
+    plot_name TEXT,
+    crop_name TEXT,
+    scheduled_date TEXT NOT NULL,
+    shift TEXT NOT NULL,
+    status TEXT NOT NULL,
+    completed_at TEXT,
+    notes TEXT,
+    synced_at TEXT NOT NULL
+  )
+''');
     // Fincas
     await db.execute('''
     CREATE TABLE farms (
@@ -177,7 +220,51 @@ class LocalDatabase {
 
   static Future<void> _onUpgrade(
       Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
+    if (oldVersion < 4) {
+      await db.execute('''
+      CREATE TABLE IF NOT EXISTS tasks_cache (
+        id TEXT PRIMARY KEY,
+        assigned_to TEXT NOT NULL,
+        assignee_name TEXT NOT NULL,
+        created_by TEXT NOT NULL,
+        creator_name TEXT NOT NULL,
+        plot_id TEXT,
+        plot_name TEXT,
+        crop_id TEXT,
+        crop_name TEXT,
+        title TEXT NOT NULL,
+        description TEXT,
+        priority TEXT NOT NULL,
+        status TEXT NOT NULL,
+        task_type TEXT NOT NULL,
+        due_date TEXT NOT NULL,
+        completed_at TEXT,
+        notes TEXT,
+        created_at TEXT NOT NULL,
+        synced_at TEXT NOT NULL
+      )
+    ''');
+
+      await db.execute('''
+      CREATE TABLE IF NOT EXISTS occurrences_cache (
+        id TEXT PRIMARY KEY,
+        template_id TEXT NOT NULL,
+        template_title TEXT NOT NULL,
+        task_type TEXT NOT NULL,
+        priority TEXT NOT NULL,
+        assigned_to TEXT,
+        assignee_name TEXT,
+        plot_name TEXT,
+        crop_name TEXT,
+        scheduled_date TEXT NOT NULL,
+        shift TEXT NOT NULL,
+        status TEXT NOT NULL,
+        completed_at TEXT,
+        notes TEXT,
+        synced_at TEXT NOT NULL
+      )
+    ''');
+
       // Agregar tablas nuevas si no existen
       await db.execute('''
       CREATE TABLE IF NOT EXISTS irrigation_logs (

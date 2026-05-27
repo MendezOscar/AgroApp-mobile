@@ -7,6 +7,7 @@ class ShiftsState extends Equatable {
   final List<TaskOccurrenceEntity> occurrences;
   final DateTime selectedDate;
   final bool isLoading;
+  final bool isOffline; // ← nuevo
   final String? error;
   final String? success;
 
@@ -15,6 +16,7 @@ class ShiftsState extends Equatable {
     this.occurrences = const [],
     required this.selectedDate,
     this.isLoading = false,
+    this.isOffline = false, // ← nuevo
     this.error,
     this.success,
   });
@@ -24,6 +26,7 @@ class ShiftsState extends Equatable {
     List<TaskOccurrenceEntity>? occurrences,
     DateTime? selectedDate,
     bool? isLoading,
+    bool? isOffline, // ← nuevo
     String? error,
     String? success,
   }) =>
@@ -32,6 +35,7 @@ class ShiftsState extends Equatable {
         occurrences: occurrences ?? this.occurrences,
         selectedDate: selectedDate ?? this.selectedDate,
         isLoading: isLoading ?? this.isLoading,
+        isOffline: isOffline ?? this.isOffline, // ← nuevo
         error: error,
         success: success,
       );
@@ -43,6 +47,13 @@ class ShiftsState extends Equatable {
   int get unassignedCount => occurrences.where((o) => o.isUnassigned).length;
 
   @override
-  List<Object?> get props =>
-      [templates, occurrences, selectedDate, isLoading, error, success];
+  List<Object?> get props => [
+        templates,
+        occurrences,
+        selectedDate,
+        isLoading,
+        isOffline,
+        error,
+        success
+      ];
 }

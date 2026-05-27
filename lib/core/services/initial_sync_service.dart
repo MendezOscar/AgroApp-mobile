@@ -11,6 +11,12 @@ import '../../features/plots/data/models/plot_model.dart';
 import '../../features/alerts/data/datasources/alerts_remote_datasource.dart';
 import '../../features/alerts/data/repositories/alerts_local_repository.dart';
 import '../../features/alerts/data/models/alert_model.dart';
+import '../../features/shifts/data/datasources/shifts_remote_datasource.dart';
+import '../../features/shifts/data/models/task_occurrence_model.dart';
+import '../../features/shifts/data/repositories/shifts_local_repository.dart';
+import '../../features/task/data/datasources/tasks_remote_datasource.dart';
+import '../../features/task/data/models/task_model.dart';
+import '../../features/task/data/repositories/tasks_local_repository.dart';
 import 'connectivity_service.dart';
 
 class InitialSyncService {
@@ -18,6 +24,10 @@ class InitialSyncService {
   final PlotsRemoteDatasource _plotsDs;
   final CropsRemoteDatasource _cropsDs;
   final AlertsRemoteDatasource _alertsDs;
+  final TasksRemoteDatasource _tasksDs;
+  final ShiftsRemoteDatasource _shiftsDs;
+  final TasksLocalRepository _tasksLocal;
+  final ShiftsLocalRepository _shiftsLocal;
   final FarmsLocalRepository _farmsLocal;
   final PlotsLocalRepository _plotsLocal;
   final CropsLocalRepository _cropsLocal;
@@ -32,6 +42,10 @@ class InitialSyncService {
     required PlotsLocalRepository plotsLocal,
     required CropsLocalRepository cropsLocal,
     required AlertsLocalRepository alertsLocal,
+    required TasksRemoteDatasource tasksDs,
+    required ShiftsRemoteDatasource shiftsDs,
+    required TasksLocalRepository tasksLocal,
+    required ShiftsLocalRepository shiftsLocal,
   })  : _farmsDs = farmsDs,
         _plotsDs = plotsDs,
         _cropsDs = cropsDs,
@@ -39,7 +53,11 @@ class InitialSyncService {
         _farmsLocal = farmsLocal,
         _plotsLocal = plotsLocal,
         _cropsLocal = cropsLocal,
-        _alertsLocal = alertsLocal;
+        _alertsLocal = alertsLocal,
+        _tasksDs = tasksDs,
+        _shiftsDs = shiftsDs,
+        _tasksLocal = tasksLocal,
+        _shiftsLocal = shiftsLocal;
 
   /// Descarga toda la jerarquía y la guarda en SQLite
   Future<void> syncAll() async {
@@ -95,6 +113,27 @@ class InitialSyncService {
         debugPrint('InitialSync: ${alerts.length} alertas guardadas');
       } catch (e) {
         debugPrint('InitialSync: error en alertas: $e');
+      }
+
+      try {
+        final tasksData = await _tasksDs.getTasks(onlyMine: false);
+        final tasks = tasksData.map((e) => TaskModel.fromJson(e)).toList();
+        await _tasksLocal.saveTasks(tasks);
+        debugPrint('InitialSync: ${tasks.length} tareas guardadas');
+      } catch (e) {
+        debugPrint('InitialSync: error en tareas: $e');
+      }
+
+// 6. Sincronizar turnos de los próximos 7 días
+      try {
+        final occurrencesData = await _shiftsDs.getOccurrences();
+        final occurrences = occurrencesData
+            .map((e) => TaskOccurrenceModel.fromJson(e))
+            .toList();
+        await _shiftsLocal.saveOccurrences(occurrences);
+        debugPrint('InitialSync: ${occurrences.length} turnos guardados');
+      } catch (e) {
+        debugPrint('InitialSync: error en turnos: $e');
       }
 
       debugPrint('InitialSync: sincronización completa ✅');

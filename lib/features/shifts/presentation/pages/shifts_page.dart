@@ -5,6 +5,7 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/role_helper.dart';
 import '../../../../core/widgets/loading_widget.dart';
+import '../../../../core/widgets/offline_banner.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../bloc/shifts_cubit.dart';
@@ -136,6 +137,7 @@ class _ShiftsPageState extends State<ShiftsPage>
                     backgroundColor: AppTheme.error),
               );
             }
+            if (state.isOffline) const OfflineBanner();
             if (state.success != null) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -147,6 +149,7 @@ class _ShiftsPageState extends State<ShiftsPage>
           builder: (context, state) {
             return Column(
               children: [
+                if (state.isOffline) const OfflineBanner(),
                 // Selector de fecha
                 InkWell(
                   onTap: _pickDate,

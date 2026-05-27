@@ -38,8 +38,10 @@ import '../../features/sensors/data/datasources/sensors_remote_datasource.dart';
 import '../../features/sensors/presentation/bloc/dashboard_cubit.dart';
 import '../../features/sensors/presentation/bloc/sensors_cubit.dart';
 import '../../features/shifts/data/datasources/shifts_remote_datasource.dart';
+import '../../features/shifts/data/repositories/shifts_local_repository.dart';
 import '../../features/shifts/presentation/bloc/shifts_cubit.dart';
 import '../../features/task/data/datasources/tasks_remote_datasource.dart';
+import '../../features/task/data/repositories/tasks_local_repository.dart';
 import '../../features/task/presentation/bloc/tasks_cubit.dart';
 import '../../features/users/data/datasources/users_remote_datasource.dart';
 import '../../features/users/presentation/bloc/users_cubit.dart';
@@ -62,7 +64,7 @@ Future<void> initDependencies() async {
       () => AuthRemoteDatasource(sl()));
   sl.registerLazySingleton<AuthRepository>(
       () => AuthRepositoryImpl(sl(), sl()));
-  sl.registerFactory<AuthBloc>(() => AuthBloc(sl()));
+  sl.registerLazySingleton<AuthBloc>(() => AuthBloc(sl())); // ← LazySingleton
 
   // ─── Farms ────────────────────────────────────────────────
   sl.registerLazySingleton<FarmsRemoteDatasource>(
@@ -137,14 +139,17 @@ Future<void> initDependencies() async {
   sl.registerFactory<UsersCubit>(() => UsersCubit(sl()));
 
   // ─── Tasks ───────────────────────────────────────────────
-  sl.registerLazySingleton<TasksRemoteDatasource>(
+  sl.registerLazySingleton<TasksRemoteDatasource>(// ← agregar
       () => TasksRemoteDatasource(sl()));
-  sl.registerFactory<TasksCubit>(() => TasksCubit(sl()));
+  sl.registerLazySingleton<TasksLocalRepository>(() => TasksLocalRepository());
+  sl.registerFactory<TasksCubit>(() => TasksCubit(sl(), sl(), sl()));
 
   // ─── Shifts ──────────────────────────────────────────────
-  sl.registerLazySingleton<ShiftsRemoteDatasource>(
+  sl.registerLazySingleton<ShiftsRemoteDatasource>(// ← agregar
       () => ShiftsRemoteDatasource(sl()));
-  sl.registerFactory<ShiftsCubit>(() => ShiftsCubit(sl()));
+  sl.registerLazySingleton<ShiftsLocalRepository>(
+      () => ShiftsLocalRepository());
+  sl.registerFactory<ShiftsCubit>(() => ShiftsCubit(sl(), sl(), sl()));
 
   // ─── Phenology ───────────────────────────────────────────
   sl.registerLazySingleton<PhenologyRemoteDatasource>(
@@ -169,9 +174,13 @@ Future<void> initDependencies() async {
         plotsDs: sl(),
         cropsDs: sl(),
         alertsDs: sl(),
+        tasksDs: sl(), // ← nuevo
+        shiftsDs: sl(), // ← nuevo
         farmsLocal: sl(),
         plotsLocal: sl(),
         cropsLocal: sl(),
         alertsLocal: sl(),
+        tasksLocal: sl(), // ← nuevo
+        shiftsLocal: sl(), // ← nuevo
       ));
 }

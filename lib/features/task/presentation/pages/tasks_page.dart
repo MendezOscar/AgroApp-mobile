@@ -4,6 +4,7 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/role_helper.dart';
 import '../../../../core/widgets/loading_widget.dart';
+import '../../../../core/widgets/offline_banner.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../bloc/tasks_cubit.dart';
@@ -118,9 +119,9 @@ class _TasksPageState extends State<TasksPage>
           },
           builder: (context, state) {
             if (state.isLoading) return const LoadingWidget();
-
             return Column(
               children: [
+                if (state.isOffline) const OfflineBanner(),
                 // Resumen
                 if (state.overdueCount > 0)
                   Container(

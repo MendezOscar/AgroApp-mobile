@@ -4,6 +4,7 @@ import '../../domain/entities/task_entity.dart';
 class TasksState extends Equatable {
   final List<TaskEntity> tasks;
   final bool isLoading;
+  final bool isOffline; // ← nuevo
   final String? error;
   final String? success;
   final String selectedStatus;
@@ -11,6 +12,7 @@ class TasksState extends Equatable {
   const TasksState({
     this.tasks = const [],
     this.isLoading = false,
+    this.isOffline = false, // ← nuevo
     this.error,
     this.success,
     this.selectedStatus = 'all',
@@ -19,6 +21,7 @@ class TasksState extends Equatable {
   TasksState copyWith({
     List<TaskEntity>? tasks,
     bool? isLoading,
+    bool? isOffline, // ← nuevo
     String? error,
     String? success,
     String? selectedStatus,
@@ -26,6 +29,7 @@ class TasksState extends Equatable {
       TasksState(
         tasks: tasks ?? this.tasks,
         isLoading: isLoading ?? this.isLoading,
+        isOffline: isOffline ?? this.isOffline, // ← nuevo
         error: error,
         success: success,
         selectedStatus: selectedStatus ?? this.selectedStatus,
@@ -40,5 +44,6 @@ class TasksState extends Equatable {
   int get overdueCount => tasks.where((t) => t.isOverdue).length;
 
   @override
-  List<Object?> get props => [tasks, isLoading, error, success, selectedStatus];
+  List<Object?> get props =>
+      [tasks, isLoading, isOffline, error, success, selectedStatus];
 }

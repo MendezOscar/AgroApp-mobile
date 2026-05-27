@@ -39,7 +39,8 @@ class _AgroAppState extends State<AgroApp> {
   @override
   void initState() {
     super.initState();
-    _authBloc = sl<AuthBloc>()..add(CheckAuthStatus());
+    _authBloc = sl<AuthBloc>(); // ← usar el singleton del DI
+    _authBloc.add(CheckAuthStatus());
 
     ConnectivityService.onConnectivityChanged.listen((isOnline) async {
       if (!isOnline) return;
