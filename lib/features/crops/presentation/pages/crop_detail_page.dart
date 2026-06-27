@@ -1,8 +1,11 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../../core/di/injection.dart';
+import '../../../../core/services/excel_service.dart';
 import '../../../../core/services/pdf_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/role_helper.dart';
@@ -10,9 +13,11 @@ import '../../../../core/widgets/offline_banner.dart';
 import '../../../../core/widgets/role_guard.dart';
 import '../../../farms/data/datasources/farms_remote_datasource.dart';
 import '../../../farms/data/models/farm_model.dart';
+import '../../../farms/domain/entities/farm_entity.dart';
 import '../../../phenology/presentation/bloc/phenology_cubit.dart';
 import '../../../plots/data/datasources/plots_remote_datasource.dart';
 import '../../../plots/data/models/plot_model.dart';
+import '../../../plots/domain/entities/plot_entity.dart';
 import '../../domain/entities/crop_entity.dart';
 import '../bloc/crop_detail_cubit.dart';
 import '../bloc/crop_detail_state.dart';
@@ -39,66 +44,78 @@ class _CropDetailPageState extends State<CropDetailPage>
   late final TabController _tabController;
   late final CropDetailCubit _cubit;
 
-  Future<void> _generateReport() async {
-    try {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const Center(
-          child: Card(
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(color: AppTheme.primary),
-                  SizedBox(height: 16),
-                  Text('Generando reporte...'),
-                ],
-              ),
+  void _showGeneratingDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => Center(
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(color: AppTheme.primary),
+                const SizedBox(height: 16),
+                Text(message),
+              ],
             ),
           ),
         ),
-      );
+      ),
+    );
+  }
 
-      // Obtener fincas
-      final farmsData = await sl<FarmsRemoteDatasource>().getFarms();
-      if (farmsData.isEmpty) throw Exception('No hay fincas disponibles');
-      final farm = FarmModel.fromJson(farmsData.first);
+  /// Busca la finca/parcela del cultivo y asegura que el cubit tenga
+  /// cargados los registros de riego/fertilización/labores, para
+  /// alimentar tanto el reporte PDF como el de Excel.
+  Future<(FarmEntity, PlotEntity)> _loadReportContext() async {
+    // Obtener fincas
+    final farmsData = await sl<FarmsRemoteDatasource>().getFarms();
+    if (farmsData.isEmpty) throw Exception('No hay fincas disponibles');
+    final farm = FarmModel.fromJson(farmsData.first);
 
-      // Obtener parcelas de todas las fincas hasta encontrar la del cultivo
-      PlotModel? plot;
-      for (final farmData in farmsData) {
-        final farmId = farmData['id'] as String;
-        final plotsData = await sl<PlotsRemoteDatasource>().getPlots(farmId);
-        for (final plotData in plotsData) {
-          if (plotData['id'] == widget.crop.plotId) {
-            plot = PlotModel.fromJson(plotData);
-            break;
-          }
+    // Obtener parcelas de todas las fincas hasta encontrar la del cultivo
+    PlotModel? plot;
+    for (final farmData in farmsData) {
+      final farmId = farmData['id'] as String;
+      final plotsData = await sl<PlotsRemoteDatasource>().getPlots(farmId);
+      for (final plotData in plotsData) {
+        if (plotData['id'] == widget.crop.plotId) {
+          plot = PlotModel.fromJson(plotData);
+          break;
         }
-        if (plot != null) break;
       }
+      if (plot != null) break;
+    }
 
-      // Si no encontramos la parcela usar datos básicos
-      plot ??= PlotModel(
-        id: widget.crop.plotId,
-        farmId: farm.id,
-        name: 'Parcela',
-        isActive: true,
-        createdAt: DateTime.now(),
-      );
+    // Si no encontramos la parcela usar datos básicos
+    plot ??= PlotModel(
+      id: widget.crop.plotId,
+      farmId: farm.id,
+      name: 'Parcela',
+      isActive: true,
+      createdAt: DateTime.now(),
+    );
 
-      // Asegurar que los tabs tengan datos cargados
-      if (_cubit.state.irrigations.isEmpty) {
-        await _cubit.loadIrrigations(widget.crop.id);
-      }
-      if (_cubit.state.fertilizations.isEmpty) {
-        await _cubit.loadFertilizations(widget.crop.id);
-      }
-      if (_cubit.state.labors.isEmpty) {
-        await _cubit.loadLabors(widget.crop.id);
-      }
+    // Asegurar que los tabs tengan datos cargados
+    if (_cubit.state.irrigations.isEmpty) {
+      await _cubit.loadIrrigations(widget.crop.id);
+    }
+    if (_cubit.state.fertilizations.isEmpty) {
+      await _cubit.loadFertilizations(widget.crop.id);
+    }
+    if (_cubit.state.labors.isEmpty) {
+      await _cubit.loadLabors(widget.crop.id);
+    }
+
+    return (farm, plot);
+  }
+
+  Future<void> _generateReport() async {
+    try {
+      _showGeneratingDialog('Generando reporte...');
+      final (farm, plot) = await _loadReportContext();
 
       final pdfBytes = await PdfService.generateCropReport(
         farm: farm,
@@ -123,6 +140,47 @@ class _CropDetailPageState extends State<CropDetailPage>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error al generar reporte: $e'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _exportExcel() async {
+    try {
+      _showGeneratingDialog('Generando Excel...');
+      final (farm, plot) = await _loadReportContext();
+
+      final excelBytes = await ExcelService.generateCropReport(
+        farm: farm,
+        plot: plot,
+        crop: widget.crop,
+        irrigations: _cubit.state.irrigations,
+        fertilizations: _cubit.state.fertilizations,
+        labors: _cubit.state.labors,
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      await SharePlus.instance.share(ShareParams(
+        files: [
+          XFile.fromData(
+            Uint8List.fromList(excelBytes),
+            name:
+                'AgroApp_${widget.crop.cropType}_${DateFormat('yyyyMMdd').format(DateTime.now())}.xlsx',
+            mimeType:
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          ),
+        ],
+      ));
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al generar Excel: $e'),
             backgroundColor: AppTheme.error,
           ),
         );
@@ -215,6 +273,11 @@ class _CropDetailPageState extends State<CropDetailPage>
                     icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
                     onPressed: _generateReport,
                     tooltip: 'Generar reporte PDF',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.grid_on, color: Colors.white),
+                    onPressed: _exportExcel,
+                    tooltip: 'Exportar a Excel',
                   ),
                 ],
                 expandedHeight: 200, // ← aumentar altura
