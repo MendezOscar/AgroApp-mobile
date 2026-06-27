@@ -99,7 +99,17 @@ class _PlotsPageState extends State<PlotsPage> {
       value: _plotsBloc,
       child: Scaffold(
         backgroundColor: AppTheme.background,
-        appBar: AppBar(title: Text(widget.farmName)),
+        appBar: AppBar(
+          title: Text(widget.farmName),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.bar_chart),
+              tooltip: 'Comparar cultivos',
+              onPressed: () =>
+                  context.push('/farms/${widget.farmId}/comparison'),
+            ),
+          ],
+        ),
         body: BlocConsumer<PlotsBloc, PlotsState>(
           listener: (context, state) {
             if (state is PlotsError) {

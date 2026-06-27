@@ -19,4 +19,9 @@ class CropsRemoteDatasource {
   Future<void> deleteCrop(String plotId, String cropId) async {
     await _dio.delete('/plots/$plotId/crops/$cropId');
   }
+
+  Future<List<dynamic>> getCropComparison(String farmId) async {
+    final response = await _dio.get('/farms/$farmId/crops/comparison');
+    return response.data;
+  }
 }

@@ -6,6 +6,7 @@ import '../../features/auth/presentation/bloc/auth_state.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/crops/domain/entities/crop_entity.dart';
+import '../../features/crops/presentation/pages/crop_comparison_page.dart';
 import '../../features/crops/presentation/pages/crop_detail_page.dart';
 import '../../features/crops/presentation/pages/crops_page.dart';
 import '../../features/farms/presentation/pages/farms_page.dart';
@@ -63,6 +64,13 @@ GoRouter createRouter(AuthBloc authBloc) {
                     },
                   ),
                 ],
+              ),
+              GoRoute(
+                path: ':farmId/comparison',
+                builder: (context, state) {
+                  final farmId = state.pathParameters['farmId']!;
+                  return CropComparisonPage(farmId: farmId);
+                },
               ),
             ],
           ),

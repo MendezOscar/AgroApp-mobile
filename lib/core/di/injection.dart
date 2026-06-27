@@ -14,6 +14,7 @@ import '../../features/crops/data/datasources/crops_remote_datasource.dart';
 import '../../features/crops/data/repositories/crops_local_repository.dart';
 import '../../features/crops/data/repositories/crops_repository_impl.dart';
 import '../../features/crops/domain/repositories/crops_repository.dart';
+import '../../features/crops/presentation/bloc/crop_comparison_cubit.dart';
 import '../../features/crops/presentation/bloc/crop_detail_cubit.dart';
 import '../../features/crops/presentation/bloc/crops_bloc.dart';
 import '../../features/farms/data/datasources/farms_remote_datasource.dart';
@@ -88,6 +89,7 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<CropsRepository>(() => CropsRepositoryImpl(sl()));
   sl.registerLazySingleton<CropsLocalRepository>(() => CropsLocalRepository());
   sl.registerFactory<CropsBloc>(() => CropsBloc(sl(), sl()));
+  sl.registerFactory<CropComparisonCubit>(() => CropComparisonCubit(sl()));
 
   // ─── Datasources remotos ──────────────────────────────────
   sl.registerLazySingleton<IrrigationRemoteDatasource>(
