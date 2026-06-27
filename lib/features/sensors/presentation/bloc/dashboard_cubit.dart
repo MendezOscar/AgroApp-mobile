@@ -6,6 +6,7 @@ import '../../../crops/data/datasources/crops_remote_datasource.dart';
 import '../../../sensors/data/datasources/sensors_remote_datasource.dart';
 import '../../../sensors/data/models/sensor_device_model.dart';
 import '../../../sensors/data/models/sensor_reading_model.dart';
+import '../../../weather/data/datasources/weather_remote_datasource.dart';
 import '../../domain/entities/sensor_reading_entity.dart';
 import 'dashboard_state.dart';
 
@@ -15,6 +16,7 @@ class DashboardCubit extends SafeCubit<DashboardState> {
   final CropsRemoteDatasource _cropsDs;
   final SensorsRemoteDatasource _sensorsDs;
   final AlertsRemoteDatasource _alertsDs;
+  final WeatherRemoteDatasource _weatherDs;
 
   DashboardCubit({
     required FarmsRemoteDatasource farmsDs,
@@ -22,11 +24,13 @@ class DashboardCubit extends SafeCubit<DashboardState> {
     required CropsRemoteDatasource cropsDs,
     required SensorsRemoteDatasource sensorsDs,
     required AlertsRemoteDatasource alertsDs,
+    required WeatherRemoteDatasource weatherDs,
   })  : _farmsDs = farmsDs,
         _plotsDs = plotsDs,
         _cropsDs = cropsDs,
         _sensorsDs = sensorsDs,
         _alertsDs = alertsDs,
+        _weatherDs = weatherDs,
         super(const DashboardState());
 
   Future<void> loadDashboard() async {
@@ -94,12 +98,22 @@ class DashboardCubit extends SafeCubit<DashboardState> {
       // Alertas sin leer
       final unreadCount = await _alertsDs.getUnreadCount();
 
+      // Clima de la finca (si tiene coordenadas)
+      final lat = (farms.first['lat'] as num?)?.toDouble();
+      final lng = (farms.first['lng'] as num?)?.toDouble();
+      final weather = lat != null && lng != null
+          ? await _weatherDs.getCurrentWeather(lat, lng)
+          : null;
+
+      if (isClosed) return;
+
       emit(state.copyWith(
         isLoading: false,
         latestReading: latestReading,
         readings: readings,
         activeCrops: activeCrops,
         unreadAlerts: unreadCount,
+        weather: weather,
       ));
     } catch (e) {
       print('ERROR DASHBOARD: $e');

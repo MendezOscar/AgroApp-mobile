@@ -45,6 +45,7 @@ import '../../features/task/data/repositories/tasks_local_repository.dart';
 import '../../features/task/presentation/bloc/tasks_cubit.dart';
 import '../../features/users/data/datasources/users_remote_datasource.dart';
 import '../../features/users/presentation/bloc/users_cubit.dart';
+import '../../features/weather/data/datasources/weather_remote_datasource.dart';
 import '../api/dio_client.dart';
 import '../services/initial_sync_service.dart';
 import '../services/sync_service.dart';
@@ -157,12 +158,15 @@ Future<void> initDependencies() async {
   sl.registerFactory<PhenologyCubit>(() => PhenologyCubit(sl()));
 
   // ─── Dashboard ────────────────────────────────────────────
+  sl.registerLazySingleton<WeatherRemoteDatasource>(
+      () => WeatherRemoteDatasource());
   sl.registerFactory<DashboardCubit>(() => DashboardCubit(
         farmsDs: sl(),
         plotsDs: sl(),
         cropsDs: sl(),
         sensorsDs: sl(),
         alertsDs: sl(),
+        weatherDs: sl(),
       ));
 
   // ─── Sync ─────────────────────────────────────────────────

@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import '../../../sensors/domain/entities/sensor_reading_entity.dart';
 import '../../../sensors/domain/entities/sensor_device_entity.dart';
+import '../../../weather/domain/entities/weather_entity.dart';
 
 class DashboardState extends Equatable {
   final bool isLoading;
@@ -9,6 +10,7 @@ class DashboardState extends Equatable {
   final List<SensorDeviceEntity> devices;
   final int activeCrops;
   final int unreadAlerts;
+  final WeatherEntity? weather;
   final String? error;
 
   const DashboardState({
@@ -18,6 +20,7 @@ class DashboardState extends Equatable {
     this.devices = const [],
     this.activeCrops = 0,
     this.unreadAlerts = 0,
+    this.weather,
     this.error,
   });
 
@@ -28,6 +31,7 @@ class DashboardState extends Equatable {
     List<SensorDeviceEntity>? devices,
     int? activeCrops,
     int? unreadAlerts,
+    WeatherEntity? weather,
     String? error,
   }) =>
       DashboardState(
@@ -37,6 +41,7 @@ class DashboardState extends Equatable {
         devices: devices ?? this.devices,
         activeCrops: activeCrops ?? this.activeCrops,
         unreadAlerts: unreadAlerts ?? this.unreadAlerts,
+        weather: weather ?? this.weather,
         error: error,
       );
 
@@ -48,6 +53,7 @@ class DashboardState extends Equatable {
         devices,
         activeCrops,
         unreadAlerts,
+        weather,
         error
       ];
 }

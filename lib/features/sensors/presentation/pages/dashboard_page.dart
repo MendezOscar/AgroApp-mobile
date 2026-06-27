@@ -8,6 +8,7 @@ import '../bloc/dashboard_cubit.dart';
 import '../bloc/dashboard_state.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/sensor_chart.dart';
+import '../widgets/weather_card.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -124,6 +125,12 @@ class _DashboardPageState extends State<DashboardPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Clima de la finca
+                          if (state.weather != null) ...[
+                            WeatherCard(weather: state.weather!),
+                            const SizedBox(height: 24),
+                          ],
+
                           // Métricas actuales
                           if (state.latestReading != null) ...[
                             const Text('Lecturas actuales',
