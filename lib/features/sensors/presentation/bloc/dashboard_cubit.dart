@@ -3,6 +3,9 @@ import '../../../alerts/data/datasources/alerts_remote_datasource.dart';
 import '../../../farms/data/datasources/farms_remote_datasource.dart';
 import '../../../plots/data/datasources/plots_remote_datasource.dart';
 import '../../../crops/data/datasources/crops_remote_datasource.dart';
+import '../../../costs/data/datasources/costs_remote_datasource.dart';
+import '../../../costs/data/models/monthly_cost_model.dart';
+import '../../../costs/domain/entities/monthly_cost_entity.dart';
 import '../../../sensors/data/datasources/sensors_remote_datasource.dart';
 import '../../../sensors/data/models/sensor_device_model.dart';
 import '../../../sensors/data/models/sensor_reading_model.dart';
@@ -17,6 +20,7 @@ class DashboardCubit extends SafeCubit<DashboardState> {
   final SensorsRemoteDatasource _sensorsDs;
   final AlertsRemoteDatasource _alertsDs;
   final WeatherRemoteDatasource _weatherDs;
+  final CostsRemoteDatasource _costsDs;
 
   DashboardCubit({
     required FarmsRemoteDatasource farmsDs,
@@ -25,12 +29,14 @@ class DashboardCubit extends SafeCubit<DashboardState> {
     required SensorsRemoteDatasource sensorsDs,
     required AlertsRemoteDatasource alertsDs,
     required WeatherRemoteDatasource weatherDs,
+    required CostsRemoteDatasource costsDs,
   })  : _farmsDs = farmsDs,
         _plotsDs = plotsDs,
         _cropsDs = cropsDs,
         _sensorsDs = sensorsDs,
         _alertsDs = alertsDs,
         _weatherDs = weatherDs,
+        _costsDs = costsDs,
         super(const DashboardState());
 
   Future<void> loadDashboard() async {
@@ -107,6 +113,16 @@ class DashboardCubit extends SafeCubit<DashboardState> {
 
       if (isClosed) return;
 
+      // Historial de gastos mensuales
+      List<MonthlyCostEntity> costHistory = [];
+      try {
+        final costData = await _costsDs.getMonthlyCostHistory(months: 6);
+        costHistory =
+            costData.map((c) => MonthlyCostModel.fromJson(c)).toList();
+      } catch (_) {}
+
+      if (isClosed) return;
+
       emit(state.copyWith(
         isLoading: false,
         latestReading: latestReading,
@@ -114,6 +130,7 @@ class DashboardCubit extends SafeCubit<DashboardState> {
         activeCrops: activeCrops,
         unreadAlerts: unreadCount,
         weather: weather,
+        costHistory: costHistory,
       ));
     } catch (e) {
       print('ERROR DASHBOARD: $e');

@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import '../../../sensors/domain/entities/sensor_reading_entity.dart';
 import '../../../sensors/domain/entities/sensor_device_entity.dart';
+import '../../../costs/domain/entities/monthly_cost_entity.dart';
 import '../../../weather/domain/entities/weather_entity.dart';
 
 class DashboardState extends Equatable {
@@ -11,6 +12,7 @@ class DashboardState extends Equatable {
   final int activeCrops;
   final int unreadAlerts;
   final WeatherEntity? weather;
+  final List<MonthlyCostEntity> costHistory;
   final String? error;
 
   const DashboardState({
@@ -21,6 +23,7 @@ class DashboardState extends Equatable {
     this.activeCrops = 0,
     this.unreadAlerts = 0,
     this.weather,
+    this.costHistory = const [],
     this.error,
   });
 
@@ -32,6 +35,7 @@ class DashboardState extends Equatable {
     int? activeCrops,
     int? unreadAlerts,
     WeatherEntity? weather,
+    List<MonthlyCostEntity>? costHistory,
     String? error,
   }) =>
       DashboardState(
@@ -42,6 +46,7 @@ class DashboardState extends Equatable {
         activeCrops: activeCrops ?? this.activeCrops,
         unreadAlerts: unreadAlerts ?? this.unreadAlerts,
         weather: weather ?? this.weather,
+        costHistory: costHistory ?? this.costHistory,
         error: error,
       );
 
@@ -54,6 +59,7 @@ class DashboardState extends Equatable {
         activeCrops,
         unreadAlerts,
         weather,
+        costHistory,
         error
       ];
 }

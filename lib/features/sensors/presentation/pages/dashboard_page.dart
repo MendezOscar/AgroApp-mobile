@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../bloc/dashboard_cubit.dart';
 import '../bloc/dashboard_state.dart';
+import '../widgets/cost_history_chart.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/sensor_chart.dart';
 import '../widgets/weather_card.dart';
@@ -207,6 +208,12 @@ class _DashboardPageState extends State<DashboardPage> {
                             ),
                           ]),
                           const SizedBox(height: 24),
+
+                          // Gastos mensuales
+                          if (state.costHistory.isNotEmpty) ...[
+                            CostHistoryChart(history: state.costHistory),
+                            const SizedBox(height: 24),
+                          ],
 
                           // Gráficas
                           if (state.readings.isNotEmpty) ...[
