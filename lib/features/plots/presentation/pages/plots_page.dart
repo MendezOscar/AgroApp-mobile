@@ -8,6 +8,7 @@ import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/offline_banner.dart';
 import '../../../../core/widgets/role_guard.dart';
+import '../../../../core/widgets/search_field.dart';
 import '../../../sensors/presentation/pages/sensors_page.dart';
 import '../../domain/entities/plot_entity.dart';
 import '../bloc/plots_bloc.dart';
@@ -28,6 +29,8 @@ class PlotsPage extends StatefulWidget {
 
 class _PlotsPageState extends State<PlotsPage> {
   late final PlotsBloc _plotsBloc;
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -38,7 +41,18 @@ class _PlotsPageState extends State<PlotsPage> {
   @override
   void dispose() {
     _plotsBloc.close();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  List<PlotEntity> _filterPlots(List<PlotEntity> plots) {
+    final q = _searchQuery.toLowerCase();
+    if (q.isEmpty) return plots;
+    return plots
+        .where((p) =>
+            p.name.toLowerCase().contains(q) ||
+            (p.soilType?.toLowerCase().contains(q) ?? false))
+        .toList();
   }
 
   void _showCreatePlot() {
@@ -97,10 +111,19 @@ class _PlotsPageState extends State<PlotsPage> {
             }
           },
           builder: (context, state) {
+            final filtered =
+                state is PlotsLoaded ? _filterPlots(state.plots) : <PlotEntity>[];
             return Column(
               children: [
                 if (state is PlotsLoaded && state.isOffline)
                   const OfflineBanner(),
+                if (state is PlotsLoaded && state.plots.isNotEmpty)
+                  SearchField(
+                    controller: _searchController,
+                    hintText: 'Buscar por nombre...',
+                    onChanged: (value) =>
+                        setState(() => _searchQuery = value),
+                  ),
                 Expanded(
                   child: state is PlotsLoading
                       ? const LoadingWidget()
@@ -112,34 +135,39 @@ class _PlotsPageState extends State<PlotsPage> {
                                   actionLabel: 'Agregar parcela',
                                   onAction: _showCreatePlot,
                                 )
-                              : RefreshIndicator(
-                                  color: AppTheme.primary,
-                                  onRefresh: () async =>
-                                      _plotsBloc.add(LoadPlots(widget.farmId)),
-                                  child: ListView.builder(
-                                    padding: const EdgeInsets.all(16),
-                                    itemCount: state.plots.length,
-                                    itemBuilder: (_, i) => PlotCard(
-                                      plot: state.plots[i],
-                                      onTap: () => context.push(
-                                        '/farms/${widget.farmId}/plots/${state.plots[i].id}/crops',
-                                        extra: state.plots[i].name,
-                                      ),
-                                      onDelete: () =>
-                                          _confirmDelete(state.plots[i]),
-                                      onSensorsTap: () => Navigator.push(
-                                        // ← nuevo
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => SensorsPage(
-                                            plotId: state.plots[i].id,
-                                            plotName: state.plots[i].name,
+                              : filtered.isEmpty
+                                  ? EmptyStateWidget(
+                                      message:
+                                          'No se encontraron parcelas para "$_searchQuery"',
+                                      icon: Icons.search_off,
+                                    )
+                                  : RefreshIndicator(
+                                      color: AppTheme.primary,
+                                      onRefresh: () async => _plotsBloc
+                                          .add(LoadPlots(widget.farmId)),
+                                      child: ListView.builder(
+                                        padding: const EdgeInsets.all(16),
+                                        itemCount: filtered.length,
+                                        itemBuilder: (_, i) => PlotCard(
+                                          plot: filtered[i],
+                                          onTap: () => context.push(
+                                            '/farms/${widget.farmId}/plots/${filtered[i].id}/crops',
+                                            extra: filtered[i].name,
+                                          ),
+                                          onDelete: () =>
+                                              _confirmDelete(filtered[i]),
+                                          onSensorsTap: () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => SensorsPage(
+                                                plotId: filtered[i].id,
+                                                plotName: filtered[i].name,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  ),
-                                )
+                                    )
                           : const SizedBox(),
                 ),
               ],

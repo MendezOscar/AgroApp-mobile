@@ -8,6 +8,7 @@ import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/offline_banner.dart';
 import '../../../../core/widgets/role_guard.dart';
+import '../../../../core/widgets/search_field.dart';
 import '../../domain/entities/crop_entity.dart';
 import '../bloc/crops_bloc.dart';
 import '../bloc/crops_event.dart';
@@ -27,6 +28,8 @@ class CropsPage extends StatefulWidget {
 
 class _CropsPageState extends State<CropsPage> {
   late final CropsBloc _cropsBloc;
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -37,7 +40,18 @@ class _CropsPageState extends State<CropsPage> {
   @override
   void dispose() {
     _cropsBloc.close();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  List<CropEntity> _filterCrops(List<CropEntity> crops) {
+    final q = _searchQuery.toLowerCase();
+    if (q.isEmpty) return crops;
+    return crops
+        .where((c) =>
+            c.cropType.toLowerCase().contains(q) ||
+            (c.variety?.toLowerCase().contains(q) ?? false))
+        .toList();
   }
 
   void _showCreateCrop() {
@@ -96,11 +110,20 @@ class _CropsPageState extends State<CropsPage> {
             }
           },
           builder: (context, state) {
+            final filtered =
+                state is CropsLoaded ? _filterCrops(state.crops) : <CropEntity>[];
             return Column(
               children: [
                 // Banner offline
                 if (state is CropsLoaded && state.isOffline)
                   const OfflineBanner(),
+                if (state is CropsLoaded && state.crops.isNotEmpty)
+                  SearchField(
+                    controller: _searchController,
+                    hintText: 'Buscar por tipo o variedad...',
+                    onChanged: (value) =>
+                        setState(() => _searchQuery = value),
+                  ),
                 // Contenido
                 Expanded(
                   child: state is CropsLoading
@@ -113,24 +136,30 @@ class _CropsPageState extends State<CropsPage> {
                                   actionLabel: 'Agregar cultivo',
                                   onAction: _showCreateCrop,
                                 )
-                              : RefreshIndicator(
-                                  color: AppTheme.primary,
-                                  onRefresh: () async =>
-                                      _cropsBloc.add(LoadCrops(widget.plotId)),
-                                  child: ListView.builder(
-                                    padding: const EdgeInsets.all(16),
-                                    itemCount: state.crops.length,
-                                    itemBuilder: (_, i) => CropCard(
-                                      crop: state.crops[i],
-                                      onTap: () => context.push(
-                                        '/crop-detail',
-                                        extra: state.crops[i],
+                              : filtered.isEmpty
+                                  ? EmptyStateWidget(
+                                      message:
+                                          'No se encontraron cultivos para "$_searchQuery"',
+                                      icon: Icons.search_off,
+                                    )
+                                  : RefreshIndicator(
+                                      color: AppTheme.primary,
+                                      onRefresh: () async => _cropsBloc
+                                          .add(LoadCrops(widget.plotId)),
+                                      child: ListView.builder(
+                                        padding: const EdgeInsets.all(16),
+                                        itemCount: filtered.length,
+                                        itemBuilder: (_, i) => CropCard(
+                                          crop: filtered[i],
+                                          onTap: () => context.push(
+                                            '/crop-detail',
+                                            extra: filtered[i],
+                                          ),
+                                          onDelete: () =>
+                                              _confirmDelete(filtered[i]),
+                                        ),
                                       ),
-                                      onDelete: () =>
-                                          _confirmDelete(state.crops[i]),
-                                    ),
-                                  ),
-                                )
+                                    )
                           : const SizedBox(),
                 ),
               ],
