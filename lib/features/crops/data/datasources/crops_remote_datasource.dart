@@ -24,4 +24,10 @@ class CropsRemoteDatasource {
     final response = await _dio.get('/farms/$farmId/crops/comparison');
     return response.data;
   }
+
+  Future<Map<String, dynamic>> getCropPrediction(
+      String plotId, String cropId) async {
+    final response = await _dio.get('/plots/$plotId/crops/$cropId/prediction');
+    return response.data;
+  }
 }

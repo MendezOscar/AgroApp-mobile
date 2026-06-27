@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/role_helper.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../crops/presentation/bloc/crop_prediction_cubit.dart';
 import '../../domain/entities/phenology_stage_entity.dart';
 import '../bloc/phenology_cubit.dart';
 import '../bloc/phenology_state.dart';
@@ -14,12 +16,14 @@ import '../widgets/phenology_stage_card.dart';
 import '../widgets/phenology_timeline.dart';
 
 class PhenologyPage extends StatefulWidget {
+  final String plotId;
   final String cropId;
   final String cropType;
   final bool embedded; // ← nuevo
 
   const PhenologyPage({
     super.key,
+    required this.plotId,
     required this.cropId,
     required this.cropType,
     this.embedded = false,
@@ -31,6 +35,7 @@ class PhenologyPage extends StatefulWidget {
 
 class _PhenologyPageState extends State<PhenologyPage> {
   late final PhenologyCubit _cubit;
+  late final CropPredictionCubit _predictionCubit;
   late final bool _canEdit;
 
   @override
@@ -42,11 +47,14 @@ class _PhenologyPageState extends State<PhenologyPage> {
         : false;
 
     _cubit = sl<PhenologyCubit>()..loadStages(widget.cropId);
+    _predictionCubit = sl<CropPredictionCubit>()
+      ..loadPrediction(widget.plotId, widget.cropId);
   }
 
   @override
   void dispose() {
     _cubit.close();
+    _predictionCubit.close();
     super.dispose();
   }
 
@@ -88,8 +96,11 @@ class _PhenologyPageState extends State<PhenologyPage> {
   @override
   Widget build(BuildContext context) {
     if (widget.embedded) {
-      return BlocProvider.value(
-        value: _cubit,
+      return MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: _cubit),
+          BlocProvider.value(value: _predictionCubit),
+        ],
         child: BlocConsumer<PhenologyCubit, PhenologyState>(
           listener: (context, state) {
             if (state.error != null) {
@@ -109,13 +120,25 @@ class _PhenologyPageState extends State<PhenologyPage> {
           },
           builder: (context, state) {
             if (state.isLoading) return const LoadingWidget();
-            return state.stages.isEmpty ? _buildEmpty() : _buildContent(state);
+            return Column(
+              children: [
+                const _PredictionCard(),
+                Expanded(
+                  child: state.stages.isEmpty
+                      ? _buildEmpty()
+                      : _buildContent(state),
+                ),
+              ],
+            );
           },
         ),
       );
     }
-    return BlocProvider.value(
-      value: _cubit,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: _cubit),
+        BlocProvider.value(value: _predictionCubit),
+      ],
       child: Scaffold(
         backgroundColor: AppTheme.background,
         appBar: AppBar(
@@ -147,7 +170,16 @@ class _PhenologyPageState extends State<PhenologyPage> {
           builder: (context, state) {
             if (state.isLoading) return const LoadingWidget();
 
-            return state.stages.isEmpty ? _buildEmpty() : _buildContent(state);
+            return Column(
+              children: [
+                const _PredictionCard(),
+                Expanded(
+                  child: state.stages.isEmpty
+                      ? _buildEmpty()
+                      : _buildContent(state),
+                ),
+              ],
+            );
           },
         ),
         floatingActionButton: _canEdit
@@ -311,6 +343,97 @@ class _PhenologyPageState extends State<PhenologyPage> {
           const SizedBox(height: 80),
         ],
       ),
+    );
+  }
+}
+
+class _PredictionCard extends StatelessWidget {
+  const _PredictionCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<CropPredictionCubit, CropPredictionState>(
+      builder: (context, state) {
+        if (state.isLoading) return const SizedBox();
+
+        final prediction = state.prediction;
+        final hasYield = prediction?.predictedYieldKg != null;
+        final hasHarvest = prediction?.predictedHarvestDate != null;
+
+        if (!hasYield && !hasHarvest) {
+          return Container(
+            margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.insights_outlined, color: Colors.grey[500]),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Sin datos suficientes para predecir — registra cosechas '
+                    'anteriores o el ciclo fenológico de este cultivo.',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final fmt = DateFormat('dd/MM/yyyy');
+        return Container(
+          margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.secondary.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.insights, color: AppTheme.primary),
+                  SizedBox(width: 8),
+                  Text('Predicción de cosecha',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (hasYield) ...[
+                Text(
+                  '≈ ${prediction!.predictedYieldKg!.toStringAsFixed(1)} kg estimados',
+                  style: const TextStyle(
+                      color: AppTheme.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15),
+                ),
+                Text(prediction.yieldBasis!,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+                const SizedBox(height: 8),
+              ],
+              if (hasHarvest) ...[
+                Builder(builder: (_) {
+                  final date = prediction!.predictedHarvestDate!;
+                  final daysLeft = date.difference(DateTime.now()).inDays;
+                  return Text(
+                    daysLeft >= 0
+                        ? 'Cosecha estimada: ${fmt.format(date)} (en $daysLeft días)'
+                        : 'Cosecha estimada: ${fmt.format(date)}',
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  );
+                }),
+                Text(prediction!.harvestBasis!,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 }

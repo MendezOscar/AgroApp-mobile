@@ -377,6 +377,7 @@ class _CropDetailPageState extends State<CropDetailPage>
                         // ← 5to
                         create: (_) => sl<PhenologyCubit>(),
                         child: PhenologyPage(
+                          plotId: widget.crop.plotId,
                           cropId: widget.crop.id,
                           cropType: widget.crop.cropType,
                           embedded: true,
