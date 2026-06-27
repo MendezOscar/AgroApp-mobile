@@ -9,6 +9,7 @@ class PlotCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onDelete;
   final VoidCallback onSensorsTap;
+  final VoidCallback onSetLocation;
 
   const PlotCard({
     super.key,
@@ -16,6 +17,7 @@ class PlotCard extends StatelessWidget {
     required this.onTap,
     required this.onDelete,
     required this.onSensorsTap,
+    required this.onSetLocation,
   });
 
   @override
@@ -68,6 +70,17 @@ class PlotCard extends StatelessWidget {
             // Menú opciones
             PopupMenuButton(
               itemBuilder: (_) => [
+                PopupMenuItem(
+                    value: 'location',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.location_on, color: AppTheme.primary),
+                        const SizedBox(width: 8),
+                        Text(plot.geoJson == null
+                            ? 'Ubicar en mapa'
+                            : 'Editar ubicación'),
+                      ],
+                    )),
                 const PopupMenuItem(
                     value: 'delete',
                     child: Row(
@@ -80,6 +93,7 @@ class PlotCard extends StatelessWidget {
               ],
               onSelected: (value) {
                 if (value == 'delete') onDelete();
+                if (value == 'location') onSetLocation();
               },
             ),
           ],

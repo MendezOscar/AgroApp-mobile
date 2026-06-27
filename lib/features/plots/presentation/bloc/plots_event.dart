@@ -32,6 +32,23 @@ class CreatePlot extends PlotsEvent {
   List<Object?> get props => [farmId, name, soilType, areaHa, notes];
 }
 
+class UpdatePlotLocation extends PlotsEvent {
+  final String farmId;
+  final String plotId;
+  final double lat;
+  final double lng;
+
+  UpdatePlotLocation({
+    required this.farmId,
+    required this.plotId,
+    required this.lat,
+    required this.lng,
+  });
+
+  @override
+  List<Object?> get props => [farmId, plotId, lat, lng];
+}
+
 class DeletePlot extends PlotsEvent {
   final String farmId;
   final String plotId;

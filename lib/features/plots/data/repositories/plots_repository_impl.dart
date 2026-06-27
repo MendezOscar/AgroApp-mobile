@@ -25,4 +25,11 @@ class PlotsRepositoryImpl implements PlotsRepository {
   Future<void> deletePlot(String farmId, String plotId) async {
     await _datasource.deletePlot(farmId, plotId);
   }
+
+  @override
+  Future<PlotEntity> updatePlot(
+      String farmId, String plotId, Map<String, dynamic> data) async {
+    final result = await _datasource.updatePlot(farmId, plotId, data);
+    return PlotModel.fromJson(result);
+  }
 }

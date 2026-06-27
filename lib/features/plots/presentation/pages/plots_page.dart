@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/geo_point.dart';
 import '../../../../core/utils/role_helper.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
@@ -16,6 +18,8 @@ import '../bloc/plots_event.dart';
 import '../bloc/plots_state.dart';
 import '../widgets/plot_card.dart';
 import '../widgets/create_plot_bottom_sheet.dart';
+import 'farm_map_page.dart';
+import 'location_picker_page.dart';
 
 class PlotsPage extends StatefulWidget {
   final String farmId;
@@ -69,6 +73,24 @@ class _PlotsPageState extends State<PlotsPage> {
     );
   }
 
+  Future<void> _setLocation(PlotEntity plot) async {
+    final result = await Navigator.push<LatLng>(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            LocationPickerPage(initial: decodeGeoPoint(plot.geoJson)),
+      ),
+    );
+    if (result != null) {
+      _plotsBloc.add(UpdatePlotLocation(
+        farmId: widget.farmId,
+        plotId: plot.id,
+        lat: result.latitude,
+        lng: result.longitude,
+      ));
+    }
+  }
+
   void _confirmDelete(PlotEntity plot) {
     showDialog(
       context: context,
@@ -102,6 +124,19 @@ class _PlotsPageState extends State<PlotsPage> {
         appBar: AppBar(
           title: Text(widget.farmName),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.map_outlined),
+              tooltip: 'Mapa de finca',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => FarmMapPage(
+                    farmId: widget.farmId,
+                    farmName: widget.farmName,
+                  ),
+                ),
+              ),
+            ),
             IconButton(
               icon: const Icon(Icons.bar_chart),
               tooltip: 'Comparar cultivos',
@@ -166,6 +201,8 @@ class _PlotsPageState extends State<PlotsPage> {
                                           ),
                                           onDelete: () =>
                                               _confirmDelete(filtered[i]),
+                                          onSetLocation: () =>
+                                              _setLocation(filtered[i]),
                                           onSensorsTap: () => Navigator.push(
                                             context,
                                             MaterialPageRoute(

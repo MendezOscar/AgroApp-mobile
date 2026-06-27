@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:latlong2/latlong.dart';
 import '../../../../core/services/connectivity_service.dart';
+import '../../../../core/utils/geo_point.dart';
 import '../../data/repositories/plots_local_repository.dart';
 import '../../domain/repositories/plots_repository.dart';
 import 'plots_event.dart';
@@ -12,6 +14,7 @@ class PlotsBloc extends Bloc<PlotsEvent, PlotsState> {
   PlotsBloc(this._repository, this._localRepository) : super(PlotsInitial()) {
     on<LoadPlots>(_onLoadPlots);
     on<CreatePlot>(_onCreatePlot);
+    on<UpdatePlotLocation>(_onUpdatePlotLocation);
     on<DeletePlot>(_onDeletePlot);
   }
 
@@ -55,6 +58,23 @@ class PlotsBloc extends Bloc<PlotsEvent, PlotsState> {
       add(LoadPlots(event.farmId));
     } catch (e) {
       emit(PlotsError('Error al crear la parcela.'));
+    }
+  }
+
+  Future<void> _onUpdatePlotLocation(
+      UpdatePlotLocation event, Emitter<PlotsState> emit) async {
+    try {
+      final isOnline = await ConnectivityService.isOnline();
+      if (!isOnline) {
+        emit(PlotsError('Sin conexión. No se puede actualizar la ubicación ahora.'));
+        return;
+      }
+      final geoJson = encodeGeoPoint(LatLng(event.lat, event.lng));
+      await _repository.updatePlot(
+          event.farmId, event.plotId, {'geoJson': geoJson});
+      add(LoadPlots(event.farmId));
+    } catch (e) {
+      emit(PlotsError('Error al actualizar la ubicación.'));
     }
   }
 

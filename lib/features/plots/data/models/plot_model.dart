@@ -8,6 +8,7 @@ class PlotModel extends PlotEntity {
     super.soilType,
     super.areaHa,
     super.notes,
+    super.geoJson,
     required super.isActive,
     required super.createdAt,
   });
@@ -19,6 +20,7 @@ class PlotModel extends PlotEntity {
         soilType: json['soilType'] as String?,
         areaHa: (json['areaHa'] as num?)?.toDouble(),
         notes: json['notes'] as String?,
+        geoJson: json['geoJson'] as String?,
         isActive: json['isActive'] as bool? ?? true,
         createdAt: json['createdAt'] != null
             ? DateTime.parse(json['createdAt'] as String)
@@ -30,5 +32,6 @@ class PlotModel extends PlotEntity {
         'soilType': soilType,
         'areaHa': areaHa,
         'notes': notes,
+        'geoJson': geoJson,
       };
 }

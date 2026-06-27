@@ -5,6 +5,7 @@ class PlotEntity {
   final String? soilType;
   final double? areaHa;
   final String? notes;
+  final String? geoJson;
   final bool isActive;
   final DateTime createdAt;
 
@@ -15,6 +16,7 @@ class PlotEntity {
     this.soilType,
     this.areaHa,
     this.notes,
+    this.geoJson,
     required this.isActive,
     required this.createdAt,
   });
