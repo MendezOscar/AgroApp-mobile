@@ -1,4 +1,5 @@
 import '../../../../core/bloc/safe_cubit.dart';
+import '../../../../core/models/paged_result.dart';
 import '../../../../core/services/connectivity_service.dart';
 import '../../../crop_images/data/datasources/crop_images_remote_datasource.dart';
 import '../../../crop_images/data/models/crop_image_model.dart';
@@ -52,25 +53,59 @@ class CropDetailCubit extends SafeCubit<CropDetailState> {
     try {
       final isOnline = await ConnectivityService.isOnline();
       if (isOnline) {
-        final data = await _irrigationDs.getIrrigations(cropId);
-        final items = data.map((e) => IrrigationModel.fromJson(e)).toList();
-        await _irrigationLocal.saveIrrigations(cropId, items);
+        final raw = await _irrigationDs.getIrrigations(cropId, page: 1);
+        final paged = PagedResult.fromJson(raw, IrrigationModel.fromJson);
+        await _irrigationLocal.saveIrrigations(cropId, paged.items);
         emit(state.copyWith(
-            irrigations: items, isLoadingIrrigation: false, isOffline: false));
+          irrigations: paged.items,
+          isLoadingIrrigation: false,
+          isOffline: false,
+          irrigationPage: paged.page,
+          irrigationHasNextPage: paged.hasNextPage,
+        ));
       } else {
         final items = await _irrigationLocal.getIrrigations(cropId);
         emit(state.copyWith(
-            irrigations: items, isLoadingIrrigation: false, isOffline: true));
+          irrigations: items,
+          isLoadingIrrigation: false,
+          isOffline: true,
+          irrigationPage: 1,
+          irrigationHasNextPage: false,
+        ));
       }
     } catch (e) {
       try {
         final items = await _irrigationLocal.getIrrigations(cropId);
         emit(state.copyWith(
-            irrigations: items, isLoadingIrrigation: false, isOffline: true));
+          irrigations: items,
+          isLoadingIrrigation: false,
+          isOffline: true,
+          irrigationPage: 1,
+          irrigationHasNextPage: false,
+        ));
       } catch (_) {
         emit(state.copyWith(
             isLoadingIrrigation: false, error: 'Error al cargar riegos'));
       }
+    }
+  }
+
+  Future<void> loadMoreIrrigations(String cropId) async {
+    if (!state.irrigationHasNextPage || state.isLoadingMoreIrrigation) return;
+    emit(state.copyWith(isLoadingMoreIrrigation: true));
+    try {
+      final nextPage = state.irrigationPage + 1;
+      final raw =
+          await _irrigationDs.getIrrigations(cropId, page: nextPage);
+      final paged = PagedResult.fromJson(raw, IrrigationModel.fromJson);
+      emit(state.copyWith(
+        irrigations: [...state.irrigations, ...paged.items],
+        isLoadingMoreIrrigation: false,
+        irrigationPage: paged.page,
+        irrigationHasNextPage: paged.hasNextPage,
+      ));
+    } catch (e) {
+      emit(state.copyWith(isLoadingMoreIrrigation: false));
     }
   }
 
@@ -122,32 +157,62 @@ class CropDetailCubit extends SafeCubit<CropDetailState> {
     try {
       final isOnline = await ConnectivityService.isOnline();
       if (isOnline) {
-        final data = await _fertilizationDs.getFertilizations(cropId);
-        final items = data.map((e) => FertilizationModel.fromJson(e)).toList();
-        await _fertilizationLocal.saveFertilizations(cropId, items);
+        final raw = await _fertilizationDs.getFertilizations(cropId, page: 1);
+        final paged = PagedResult.fromJson(raw, FertilizationModel.fromJson);
+        await _fertilizationLocal.saveFertilizations(cropId, paged.items);
         emit(state.copyWith(
-            fertilizations: items,
-            isLoadingFertilization: false,
-            isOffline: false));
+          fertilizations: paged.items,
+          isLoadingFertilization: false,
+          isOffline: false,
+          fertilizationPage: paged.page,
+          fertilizationHasNextPage: paged.hasNextPage,
+        ));
       } else {
         final items = await _fertilizationLocal.getFertilizations(cropId);
         emit(state.copyWith(
-            fertilizations: items,
-            isLoadingFertilization: false,
-            isOffline: true));
+          fertilizations: items,
+          isLoadingFertilization: false,
+          isOffline: true,
+          fertilizationPage: 1,
+          fertilizationHasNextPage: false,
+        ));
       }
     } catch (e) {
       try {
         final items = await _fertilizationLocal.getFertilizations(cropId);
         emit(state.copyWith(
-            fertilizations: items,
-            isLoadingFertilization: false,
-            isOffline: true));
+          fertilizations: items,
+          isLoadingFertilization: false,
+          isOffline: true,
+          fertilizationPage: 1,
+          fertilizationHasNextPage: false,
+        ));
       } catch (_) {
         emit(state.copyWith(
             isLoadingFertilization: false,
             error: 'Error al cargar fertilizaciones'));
       }
+    }
+  }
+
+  Future<void> loadMoreFertilizations(String cropId) async {
+    if (!state.fertilizationHasNextPage || state.isLoadingMoreFertilization) {
+      return;
+    }
+    emit(state.copyWith(isLoadingMoreFertilization: true));
+    try {
+      final nextPage = state.fertilizationPage + 1;
+      final raw =
+          await _fertilizationDs.getFertilizations(cropId, page: nextPage);
+      final paged = PagedResult.fromJson(raw, FertilizationModel.fromJson);
+      emit(state.copyWith(
+        fertilizations: [...state.fertilizations, ...paged.items],
+        isLoadingMoreFertilization: false,
+        fertilizationPage: paged.page,
+        fertilizationHasNextPage: paged.hasNextPage,
+      ));
+    } catch (e) {
+      emit(state.copyWith(isLoadingMoreFertilization: false));
     }
   }
 
@@ -201,25 +266,58 @@ class CropDetailCubit extends SafeCubit<CropDetailState> {
     try {
       final isOnline = await ConnectivityService.isOnline();
       if (isOnline) {
-        final data = await _laborDs.getLabors(cropId);
-        final items = data.map((e) => LaborModel.fromJson(e)).toList();
-        await _laborLocal.saveLabors(cropId, items);
+        final raw = await _laborDs.getLabors(cropId, page: 1);
+        final paged = PagedResult.fromJson(raw, LaborModel.fromJson);
+        await _laborLocal.saveLabors(cropId, paged.items);
         emit(state.copyWith(
-            labors: items, isLoadingLabor: false, isOffline: false));
+          labors: paged.items,
+          isLoadingLabor: false,
+          isOffline: false,
+          laborPage: paged.page,
+          laborHasNextPage: paged.hasNextPage,
+        ));
       } else {
         final items = await _laborLocal.getLabors(cropId);
         emit(state.copyWith(
-            labors: items, isLoadingLabor: false, isOffline: true));
+          labors: items,
+          isLoadingLabor: false,
+          isOffline: true,
+          laborPage: 1,
+          laborHasNextPage: false,
+        ));
       }
     } catch (e) {
       try {
         final items = await _laborLocal.getLabors(cropId);
         emit(state.copyWith(
-            labors: items, isLoadingLabor: false, isOffline: true));
+          labors: items,
+          isLoadingLabor: false,
+          isOffline: true,
+          laborPage: 1,
+          laborHasNextPage: false,
+        ));
       } catch (_) {
         emit(state.copyWith(
             isLoadingLabor: false, error: 'Error al cargar labores'));
       }
+    }
+  }
+
+  Future<void> loadMoreLabors(String cropId) async {
+    if (!state.laborHasNextPage || state.isLoadingMoreLabor) return;
+    emit(state.copyWith(isLoadingMoreLabor: true));
+    try {
+      final nextPage = state.laborPage + 1;
+      final raw = await _laborDs.getLabors(cropId, page: nextPage);
+      final paged = PagedResult.fromJson(raw, LaborModel.fromJson);
+      emit(state.copyWith(
+        labors: [...state.labors, ...paged.items],
+        isLoadingMoreLabor: false,
+        laborPage: paged.page,
+        laborHasNextPage: paged.hasNextPage,
+      ));
+    } catch (e) {
+      emit(state.copyWith(isLoadingMoreLabor: false));
     }
   }
 

@@ -19,6 +19,19 @@ class CropDetailState extends Equatable {
   final String? error;
   final bool isAnalyzing; // ← nuevo
 
+  // ─── Paginación ───────────────────────────────────────────
+  final int irrigationPage;
+  final bool irrigationHasNextPage;
+  final bool isLoadingMoreIrrigation;
+
+  final int fertilizationPage;
+  final bool fertilizationHasNextPage;
+  final bool isLoadingMoreFertilization;
+
+  final int laborPage;
+  final bool laborHasNextPage;
+  final bool isLoadingMoreLabor;
+
   const CropDetailState({
     this.irrigations = const [],
     this.fertilizations = const [],
@@ -32,6 +45,15 @@ class CropDetailState extends Equatable {
     this.isOffline = false,
     this.error,
     this.isAnalyzing = false,
+    this.irrigationPage = 1,
+    this.irrigationHasNextPage = false,
+    this.isLoadingMoreIrrigation = false,
+    this.fertilizationPage = 1,
+    this.fertilizationHasNextPage = false,
+    this.isLoadingMoreFertilization = false,
+    this.laborPage = 1,
+    this.laborHasNextPage = false,
+    this.isLoadingMoreLabor = false,
   });
 
   CropDetailState copyWith({
@@ -47,6 +69,15 @@ class CropDetailState extends Equatable {
     bool? isOffline,
     String? error,
     bool? isAnalyzing,
+    int? irrigationPage,
+    bool? irrigationHasNextPage,
+    bool? isLoadingMoreIrrigation,
+    int? fertilizationPage,
+    bool? fertilizationHasNextPage,
+    bool? isLoadingMoreFertilization,
+    int? laborPage,
+    bool? laborHasNextPage,
+    bool? isLoadingMoreLabor,
   }) =>
       CropDetailState(
         irrigations: irrigations ?? this.irrigations,
@@ -62,6 +93,19 @@ class CropDetailState extends Equatable {
         isOffline: isOffline ?? this.isOffline,
         error: error,
         isAnalyzing: isAnalyzing ?? this.isAnalyzing,
+        irrigationPage: irrigationPage ?? this.irrigationPage,
+        irrigationHasNextPage:
+            irrigationHasNextPage ?? this.irrigationHasNextPage,
+        isLoadingMoreIrrigation:
+            isLoadingMoreIrrigation ?? this.isLoadingMoreIrrigation,
+        fertilizationPage: fertilizationPage ?? this.fertilizationPage,
+        fertilizationHasNextPage:
+            fertilizationHasNextPage ?? this.fertilizationHasNextPage,
+        isLoadingMoreFertilization:
+            isLoadingMoreFertilization ?? this.isLoadingMoreFertilization,
+        laborPage: laborPage ?? this.laborPage,
+        laborHasNextPage: laborHasNextPage ?? this.laborHasNextPage,
+        isLoadingMoreLabor: isLoadingMoreLabor ?? this.isLoadingMoreLabor,
       );
 
   @override
@@ -77,5 +121,14 @@ class CropDetailState extends Equatable {
         isLoadingImages,
         isOffline,
         error,
+        irrigationPage,
+        irrigationHasNextPage,
+        isLoadingMoreIrrigation,
+        fertilizationPage,
+        fertilizationHasNextPage,
+        isLoadingMoreFertilization,
+        laborPage,
+        laborHasNextPage,
+        isLoadingMoreLabor,
       ];
 }

@@ -5,6 +5,7 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/offline_banner.dart';
+import '../../../../core/widgets/paginated_list.dart';
 import '../../domain/entities/alert_entity.dart';
 import '../bloc/alerts_cubit.dart';
 import '../bloc/alerts_state.dart';
@@ -180,46 +181,39 @@ class _AlertsPageState extends State<AlertsPage> {
 
                 // Lista
                 Expanded(
-                  child: state.alerts.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.notifications_none,
-                                  size: 72, color: Colors.grey[400]),
-                              const SizedBox(height: 16),
-                              Text(
-                                _onlyUnread
-                                    ? 'No hay alertas sin leer'
-                                    : state.isOffline
-                                        ? 'No hay alertas guardadas localmente'
-                                        : 'No hay alertas',
-                                style: TextStyle(color: Colors.grey[600]),
-                              ),
-                            ],
+                  child: PaginatedList<AlertEntity>(
+                    items: state.alerts,
+                    hasNextPage: state.hasNextPage,
+                    isLoadingMore: state.isLoadingMore,
+                    onLoadMore: () => _cubit.loadMoreAlerts(),
+                    onRefresh: () => _cubit.loadAlerts(onlyUnread: _onlyUnread),
+                    emptyWidget: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.notifications_none,
+                              size: 72, color: Colors.grey[400]),
+                          const SizedBox(height: 16),
+                          Text(
+                            _onlyUnread
+                                ? 'No hay alertas sin leer'
+                                : state.isOffline
+                                    ? 'No hay alertas guardadas localmente'
+                                    : 'No hay alertas',
+                            style: TextStyle(color: Colors.grey[600]),
                           ),
-                        )
-                      : RefreshIndicator(
-                          color: AppTheme.primary,
-                          onRefresh: () =>
-                              _cubit.loadAlerts(onlyUnread: _onlyUnread),
-                          child: ListView.builder(
-                            padding: const EdgeInsets.all(16),
-                            itemCount: state.alerts.length,
-                            itemBuilder: (_, i) => _AlertCard(
-                              alert: state.alerts[i],
-                              isOffline: state.isOffline,
-                              onMarkRead: () =>
-                                  _cubit.markAsRead(state.alerts[i].id),
-                              severityColor:
-                                  _severityColor(state.alerts[i].severity),
-                              severityIcon:
-                                  _severityIcon(state.alerts[i].severity),
-                              severityLabel:
-                                  _severityLabel(state.alerts[i].severity),
-                            ),
-                          ),
-                        ),
+                        ],
+                      ),
+                    ),
+                    itemBuilder: (_, alert, __) => _AlertCard(
+                      alert: alert,
+                      isOffline: state.isOffline,
+                      onMarkRead: () => _cubit.markAsRead(alert.id),
+                      severityColor: _severityColor(alert.severity),
+                      severityIcon: _severityIcon(alert.severity),
+                      severityLabel: _severityLabel(alert.severity),
+                    ),
+                  ),
                 ),
               ],
             );

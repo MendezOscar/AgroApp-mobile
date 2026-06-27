@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../../../core/services/crop_image_cache_manager.dart';
 import '../../../../../core/theme/app_theme.dart';
 import '../../../data/models/ai_diagnosis_model.dart';
 import '../../bloc/crop_detail_cubit.dart';
@@ -375,23 +377,22 @@ class ImagesTab extends StatelessWidget {
                                       errorBuilder: (_, __, ___) =>
                                           _errorPlaceholder(),
                                     )
-                                  : Image.network(
-                                      image.url,
+                                  : CachedNetworkImage(
+                                      imageUrl: image.url,
+                                      cacheManager:
+                                          CropImageCacheManager.instance,
+                                      cacheKey: image.storageKey,
                                       fit: BoxFit.cover,
-                                      loadingBuilder: (_, child, progress) =>
-                                          progress == null
-                                              ? child
-                                              : Container(
-                                                  color: Colors.grey[200],
-                                                  child: const Center(
-                                                    child:
-                                                        CircularProgressIndicator(
-                                                      color: AppTheme.primary,
-                                                      strokeWidth: 2,
-                                                    ),
-                                                  ),
-                                                ),
-                                      errorBuilder: (_, __, ___) =>
+                                      placeholder: (_, __) => Container(
+                                        color: Colors.grey[200],
+                                        child: const Center(
+                                          child: CircularProgressIndicator(
+                                            color: AppTheme.primary,
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      errorWidget: (_, __, ___) =>
                                           _errorPlaceholder(),
                                     ),
                             ),

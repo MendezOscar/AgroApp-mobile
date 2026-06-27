@@ -3,15 +3,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/role_helper.dart';
-import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/offline_banner.dart';
+import '../../../../core/widgets/paginated_list.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../domain/entities/task_entity.dart';
 import '../bloc/tasks_cubit.dart';
 import '../bloc/tasks_state.dart';
 import '../widgets/create_task_sheet.dart';
 import '../widgets/task_card.dart';
 import '../widgets/update_status_sheet.dart';
+
+const _tabStatuses = ['Pending', 'InProgress', 'Completed'];
 
 class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
@@ -36,7 +39,13 @@ class _TasksPageState extends State<TasksPage>
         ? RoleHelper.isManager(authState.user.role)
         : false;
 
-    _cubit = sl<TasksCubit>()..loadTasks(onlyMine: !_isManager);
+    _cubit = sl<TasksCubit>()
+      ..loadTasks(_tabStatuses[0], onlyMine: !_isManager);
+
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
+      _cubit.loadTasks(_tabStatuses[_tabController.index]);
+    });
   }
 
   @override
@@ -85,7 +94,8 @@ class _TasksPageState extends State<TasksPage>
           actions: [
             IconButton(
               icon: const Icon(Icons.refresh),
-              onPressed: () => _cubit.loadTasks(onlyMine: !_isManager),
+              onPressed: () =>
+                  _cubit.loadTasks(_tabStatuses[_tabController.index]),
             ),
           ],
           bottom: TabBar(
@@ -118,7 +128,6 @@ class _TasksPageState extends State<TasksPage>
             }
           },
           builder: (context, state) {
-            if (state.isLoading) return const LoadingWidget();
             return Column(
               children: [
                 if (state.isOffline) const OfflineBanner(),
@@ -148,9 +157,9 @@ class _TasksPageState extends State<TasksPage>
                   child: TabBarView(
                     controller: _tabController,
                     children: [
-                      _buildTaskList(state.pendingTasks, state),
-                      _buildTaskList(state.inProgressTasks, state),
-                      _buildTaskList(state.completedTasks, state),
+                      _buildTaskList(_tabStatuses[0], state.pending),
+                      _buildTaskList(_tabStatuses[1], state.inProgress),
+                      _buildTaskList(_tabStatuses[2], state.completed),
                     ],
                   ),
                 ),
@@ -171,9 +180,19 @@ class _TasksPageState extends State<TasksPage>
     );
   }
 
-  Widget _buildTaskList(List tasks, TasksState state) {
-    if (tasks.isEmpty) {
-      return Center(
+  Widget _buildTaskList(String status, TaskBucket bucket) {
+    if (bucket.isLoading && bucket.items.isEmpty) {
+      return const Center(
+          child: CircularProgressIndicator(color: AppTheme.primary));
+    }
+
+    return PaginatedList<TaskEntity>(
+      items: bucket.items,
+      hasNextPage: bucket.hasNextPage,
+      isLoadingMore: bucket.isLoadingMore,
+      onLoadMore: () => _cubit.loadMoreTasks(status),
+      onRefresh: () async => _cubit.loadTasks(status),
+      emptyWidget: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -185,21 +204,12 @@ class _TasksPageState extends State<TasksPage>
             ),
           ],
         ),
-      );
-    }
-
-    return RefreshIndicator(
-      color: AppTheme.primary,
-      onRefresh: () async => _cubit.loadTasks(onlyMine: !_isManager),
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: tasks.length,
-        itemBuilder: (_, i) => TaskCard(
-          task: tasks[i],
-          isManager: _isManager,
-          onUpdateStatus: () => _showUpdateStatus(tasks[i]),
-          onDelete: _isManager ? () => _confirmDelete(tasks[i].id) : null,
-        ),
+      ),
+      itemBuilder: (_, task, __) => TaskCard(
+        task: task,
+        isManager: _isManager,
+        onUpdateStatus: () => _showUpdateStatus(task),
+        onDelete: _isManager ? () => _confirmDelete(task.id) : null,
       ),
     );
   }

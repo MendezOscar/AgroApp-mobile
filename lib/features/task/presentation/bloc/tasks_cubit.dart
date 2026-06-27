@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import '../../../../core/bloc/safe_cubit.dart';
+import '../../../../core/models/paged_result.dart';
 import '../../../../core/services/connectivity_service.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
@@ -7,10 +9,14 @@ import '../../data/models/task_model.dart';
 import '../../data/repositories/tasks_local_repository.dart';
 import 'tasks_state.dart';
 
+const _statusKeys = {'Pending', 'InProgress', 'Completed'};
+
 class TasksCubit extends SafeCubit<TasksState> {
   final TasksRemoteDatasource _datasource;
   final TasksLocalRepository _localRepository;
   final AuthBloc _authBloc;
+  bool _onlyMine = false;
+  String _activeStatus = 'Pending';
 
   TasksCubit(
     this._datasource,
@@ -24,32 +30,105 @@ class TasksCubit extends SafeCubit<TasksState> {
     return null;
   }
 
-  Future<void> loadTasks({bool onlyMine = false}) async {
-    emit(state.copyWith(isLoading: true, error: null));
+  TaskBucket _bucketFor(String status) {
+    switch (status) {
+      case 'Pending':
+        return state.pending;
+      case 'InProgress':
+        return state.inProgress;
+      default:
+        return state.completed;
+    }
+  }
+
+  TasksState _withBucket(String status, TaskBucket bucket) {
+    switch (status) {
+      case 'Pending':
+        return state.copyWith(pending: bucket);
+      case 'InProgress':
+        return state.copyWith(inProgress: bucket);
+      default:
+        return state.copyWith(completed: bucket);
+    }
+  }
+
+  Future<void> loadTasks(String status, {bool? onlyMine}) async {
+    assert(_statusKeys.contains(status));
+    if (onlyMine != null) _onlyMine = onlyMine;
+    _activeStatus = status;
+    emit(_withBucket(status, _bucketFor(status).copyWith(isLoading: true))
+        .copyWith(error: null));
     try {
       final isOnline = await ConnectivityService.isOnline();
       if (isOnline) {
-        final data = await _datasource.getTasks(onlyMine: onlyMine);
-        final tasks = data.map((e) => TaskModel.fromJson(e)).toList();
-        await _localRepository.saveTasks(tasks);
-        emit(state.copyWith(tasks: tasks, isLoading: false, isOffline: false));
+        final raw = await _datasource.getTasks(
+            onlyMine: _onlyMine, status: status, page: 1);
+        final paged = PagedResult.fromJson(raw, TaskModel.fromJson);
+        await _localRepository.saveTasks(paged.items);
+        emit(_withBucket(
+          status,
+          TaskBucket(
+            items: paged.items,
+            page: paged.page,
+            hasNextPage: paged.hasNextPage,
+          ),
+        ).copyWith(isOffline: false));
       } else {
-        final tasks = await _localRepository.getTasks(
-          onlyMine: onlyMine,
-          userId: _currentUserId,
-        );
-        emit(state.copyWith(tasks: tasks, isLoading: false, isOffline: true));
+        emit(_withBucket(status, await _loadBucketOffline(status))
+            .copyWith(isOffline: true));
       }
     } catch (e) {
-      try {
-        final tasks = await _localRepository.getTasks(
-          onlyMine: onlyMine,
-          userId: _currentUserId,
-        );
-        emit(state.copyWith(tasks: tasks, isLoading: false, isOffline: true));
-      } catch (_) {
-        emit(state.copyWith(isLoading: false, error: 'Error al cargar tareas'));
+      debugPrint('TasksCubit.loadTasks($status) error: $e');
+      // Solo mostrar el banner de offline si realmente no hay conexión.
+      // Si hay conexión pero la petición falló (error del servidor, etc.),
+      // mostrar el error real en vez de etiquetarlo como "modo offline".
+      final stillOnline = await ConnectivityService.isOnline();
+      if (!stillOnline) {
+        try {
+          emit(_withBucket(status, await _loadBucketOffline(status))
+              .copyWith(isOffline: true));
+          return;
+        } catch (_) {
+          // sin cache local tampoco — cae al error genérico abajo
+        }
       }
+      emit(_withBucket(status, _bucketFor(status).copyWith(isLoading: false))
+          .copyWith(error: 'Error al cargar tareas'));
+    }
+  }
+
+  Future<TaskBucket> _loadBucketOffline(String status) async {
+    final tasks = await _localRepository.getTasks(
+      onlyMine: _onlyMine,
+      userId: _currentUserId,
+    );
+    return TaskBucket(
+      items: tasks.where((t) => t.status == status).toList(),
+      hasNextPage: false,
+    );
+  }
+
+  Future<void> loadMoreTasks(String status) async {
+    final bucket = _bucketFor(status);
+    if (!bucket.hasNextPage || bucket.isLoadingMore || state.isOffline) return;
+    emit(_withBucket(status, bucket.copyWith(isLoadingMore: true)));
+    try {
+      final nextPage = bucket.page + 1;
+      final raw = await _datasource.getTasks(
+          onlyMine: _onlyMine, status: status, page: nextPage);
+      final paged = PagedResult.fromJson(raw, TaskModel.fromJson);
+      final current = _bucketFor(status);
+      emit(_withBucket(
+        status,
+        current.copyWith(
+          items: [...current.items, ...paged.items],
+          page: paged.page,
+          hasNextPage: paged.hasNextPage,
+          isLoadingMore: false,
+        ),
+      ));
+    } catch (e) {
+      emit(_withBucket(status, _bucketFor(status).copyWith(isLoadingMore: false)));
     }
   }
 
@@ -58,7 +137,7 @@ class TasksCubit extends SafeCubit<TasksState> {
       final isOnline = await ConnectivityService.isOnline();
       if (isOnline) {
         await _datasource.createTask(data);
-        await loadTasks();
+        await loadTasks(_activeStatus);
         emit(state.copyWith(success: 'Tarea creada correctamente'));
       } else {
         emit(state.copyWith(
@@ -74,17 +153,14 @@ class TasksCubit extends SafeCubit<TasksState> {
       final isOnline = await ConnectivityService.isOnline();
       if (isOnline) {
         await _datasource.updateStatus(id, status, notes);
-        await loadTasks();
+        await loadTasks(_activeStatus);
+        emit(state.copyWith(success: 'Estado actualizado'));
       } else {
         // Actualizar localmente y guardar pendiente
         await _localRepository.updateTaskStatus(id, status, notes);
-        final tasks = await _localRepository.getTasks();
-        emit(state.copyWith(
-            tasks: tasks,
-            isOffline: true,
-            success: 'Estado guardado localmente'));
+        emit(_withBucket(_activeStatus, await _loadBucketOffline(_activeStatus))
+            .copyWith(isOffline: true, success: 'Estado guardado localmente'));
       }
-      emit(state.copyWith(success: 'Estado actualizado'));
     } catch (e) {
       emit(state.copyWith(error: 'Error al actualizar estado'));
     }
@@ -95,7 +171,7 @@ class TasksCubit extends SafeCubit<TasksState> {
       final isOnline = await ConnectivityService.isOnline();
       if (isOnline) {
         await _datasource.deleteTask(id);
-        await loadTasks();
+        await loadTasks(_activeStatus);
         emit(state.copyWith(success: 'Tarea eliminada'));
       } else {
         emit(state.copyWith(

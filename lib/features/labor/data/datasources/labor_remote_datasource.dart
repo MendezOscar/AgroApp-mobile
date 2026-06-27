@@ -4,8 +4,13 @@ class LaborRemoteDatasource {
   final Dio _dio;
   LaborRemoteDatasource(this._dio);
 
-  Future<List<dynamic>> getLabors(String cropId) async {
-    final response = await _dio.get('/crops/$cropId/labor');
+  Future<Map<String, dynamic>> getLabors(
+    String cropId, {
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final response = await _dio.get('/crops/$cropId/labor',
+        queryParameters: {'page': page, 'pageSize': pageSize});
     return response.data;
   }
 

@@ -4,8 +4,13 @@ class IrrigationRemoteDatasource {
   final Dio _dio;
   IrrigationRemoteDatasource(this._dio);
 
-  Future<List<dynamic>> getIrrigations(String cropId) async {
-    final response = await _dio.get('/crops/$cropId/irrigation');
+  Future<Map<String, dynamic>> getIrrigations(
+    String cropId, {
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final response = await _dio.get('/crops/$cropId/irrigation',
+        queryParameters: {'page': page, 'pageSize': pageSize});
     return response.data;
   }
 

@@ -4,13 +4,17 @@ class TasksRemoteDatasource {
   final Dio _dio;
   TasksRemoteDatasource(this._dio);
 
-  Future<List<dynamic>> getTasks({
+  Future<Map<String, dynamic>> getTasks({
     bool onlyMine = false,
     String? status,
+    int page = 1,
+    int pageSize = 20,
   }) async {
     final response = await _dio.get('/tasks', queryParameters: {
       'onlyMine': onlyMine,
       if (status != null) 'status': status,
+      'page': page,
+      'pageSize': pageSize,
     });
     return response.data;
   }

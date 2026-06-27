@@ -4,8 +4,13 @@ class FertilizationRemoteDatasource {
   final Dio _dio;
   FertilizationRemoteDatasource(this._dio);
 
-  Future<List<dynamic>> getFertilizations(String cropId) async {
-    final response = await _dio.get('/crops/$cropId/fertilization');
+  Future<Map<String, dynamic>> getFertilizations(
+    String cropId, {
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final response = await _dio.get('/crops/$cropId/fertilization',
+        queryParameters: {'page': page, 'pageSize': pageSize});
     return response.data;
   }
 

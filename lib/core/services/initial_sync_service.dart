@@ -17,6 +17,7 @@ import '../../features/shifts/data/repositories/shifts_local_repository.dart';
 import '../../features/task/data/datasources/tasks_remote_datasource.dart';
 import '../../features/task/data/models/task_model.dart';
 import '../../features/task/data/repositories/tasks_local_repository.dart';
+import '../models/paged_result.dart';
 import 'connectivity_service.dart';
 
 class InitialSyncService {
@@ -107,19 +108,19 @@ class InitialSyncService {
 
       // 4. Sincronizar alertas
       try {
-        final alertsData = await _alertsDs.getAlerts();
-        final alerts = alertsData.map((e) => AlertModel.fromJson(e)).toList();
-        await _alertsLocal.saveAlerts(alerts);
-        debugPrint('InitialSync: ${alerts.length} alertas guardadas');
+        final raw = await _alertsDs.getAlerts(pageSize: 100);
+        final paged = PagedResult.fromJson(raw, AlertModel.fromJson);
+        await _alertsLocal.saveAlerts(paged.items);
+        debugPrint('InitialSync: ${paged.items.length} alertas guardadas');
       } catch (e) {
         debugPrint('InitialSync: error en alertas: $e');
       }
 
       try {
-        final tasksData = await _tasksDs.getTasks(onlyMine: false);
-        final tasks = tasksData.map((e) => TaskModel.fromJson(e)).toList();
-        await _tasksLocal.saveTasks(tasks);
-        debugPrint('InitialSync: ${tasks.length} tareas guardadas');
+        final raw = await _tasksDs.getTasks(onlyMine: false, pageSize: 100);
+        final paged = PagedResult.fromJson(raw, TaskModel.fromJson);
+        await _tasksLocal.saveTasks(paged.items);
+        debugPrint('InitialSync: ${paged.items.length} tareas guardadas');
       } catch (e) {
         debugPrint('InitialSync: error en tareas: $e');
       }
