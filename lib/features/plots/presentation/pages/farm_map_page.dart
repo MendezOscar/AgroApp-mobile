@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/geo_point.dart';
+import '../../../../core/widgets/map_zoom_buttons.dart';
 import '../../domain/entities/plot_entity.dart';
 import '../bloc/plots_bloc.dart';
 import '../bloc/plots_event.dart';
@@ -22,6 +23,7 @@ class FarmMapPage extends StatefulWidget {
 
 class _FarmMapPageState extends State<FarmMapPage> {
   late final PlotsBloc _plotsBloc;
+  final _mapController = MapController();
 
   @override
   void initState() {
@@ -32,6 +34,7 @@ class _FarmMapPageState extends State<FarmMapPage> {
   @override
   void dispose() {
     _plotsBloc.close();
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -68,13 +71,19 @@ class _FarmMapPageState extends State<FarmMapPage> {
               return const Center(child: CircularProgressIndicator());
             }
 
-            final located = <PlotEntity, LatLng>{};
+            final polygons = <PlotEntity, List<LatLng>>{};
+            final legacyPoints = <PlotEntity, LatLng>{};
             for (final plot in state.plots) {
+              final ring = decodeGeoPolygon(plot.geoJson);
+              if (ring != null && ring.length >= 3) {
+                polygons[plot] = ring;
+                continue;
+              }
               final point = decodeGeoPoint(plot.geoJson);
-              if (point != null) located[plot] = point;
+              if (point != null) legacyPoints[plot] = point;
             }
 
-            if (located.isEmpty) {
+            if (polygons.isEmpty && legacyPoints.isEmpty) {
               return const Center(
                 child: Padding(
                   padding: EdgeInsets.all(24),
@@ -88,34 +97,69 @@ class _FarmMapPageState extends State<FarmMapPage> {
               );
             }
 
-            final center = LatLng(
-              located.values.map((p) => p.latitude).reduce((a, b) => a + b) /
-                  located.length,
-              located.values.map((p) => p.longitude).reduce((a, b) => a + b) /
-                  located.length,
-            );
+            LatLng centroidOf(List<LatLng> points) => LatLng(
+                  points.map((p) => p.latitude).reduce((a, b) => a + b) /
+                      points.length,
+                  points.map((p) => p.longitude).reduce((a, b) => a + b) /
+                      points.length,
+                );
 
-            return FlutterMap(
-              options: MapOptions(initialCenter: center, initialZoom: 14),
+            final centroids = {
+              for (final e in polygons.entries) e.key: centroidOf(e.value),
+              ...legacyPoints,
+            };
+
+            final center = centroidOf(centroids.values.toList());
+
+            return Stack(
               children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.osdadev.agroapp',
+                FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(initialCenter: center, initialZoom: 14),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.osdadev.agroapp',
+                    ),
+                    PolygonLayer(
+                      polygons: polygons.values
+                          .map((points) => Polygon(
+                                points: points,
+                                color:
+                                    AppTheme.primary.withValues(alpha: 0.25),
+                                borderColor: AppTheme.primary,
+                                borderStrokeWidth: 2,
+                              ))
+                          .toList(),
+                    ),
+                    MarkerLayer(
+                      markers: [
+                        ...polygons.keys.map((plot) => Marker(
+                              point: centroids[plot]!,
+                              width: 32,
+                              height: 32,
+                              child: GestureDetector(
+                                onTap: () => _showPlotInfo(plot),
+                                child: const Icon(Icons.crop_square,
+                                    color: AppTheme.primary, size: 28),
+                              ),
+                            )),
+                        ...legacyPoints.entries.map((e) => Marker(
+                              point: e.value,
+                              width: 40,
+                              height: 40,
+                              child: GestureDetector(
+                                onTap: () => _showPlotInfo(e.key),
+                                child: const Icon(Icons.location_pin,
+                                    color: AppTheme.primary, size: 40),
+                              ),
+                            )),
+                      ],
+                    ),
+                  ],
                 ),
-                MarkerLayer(
-                  markers: located.entries
-                      .map((e) => Marker(
-                            point: e.value,
-                            width: 40,
-                            height: 40,
-                            child: GestureDetector(
-                              onTap: () => _showPlotInfo(e.key),
-                              child: const Icon(Icons.location_pin,
-                                  color: AppTheme.primary, size: 40),
-                            ),
-                          ))
-                      .toList(),
-                ),
+                MapZoomButtons(mapController: _mapController),
               ],
             );
           },

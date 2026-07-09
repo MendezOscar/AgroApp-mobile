@@ -19,7 +19,7 @@ import '../bloc/plots_state.dart';
 import '../widgets/plot_card.dart';
 import '../widgets/create_plot_bottom_sheet.dart';
 import 'farm_map_page.dart';
-import 'location_picker_page.dart';
+import 'plot_polygon_picker_page.dart';
 
 class PlotsPage extends StatefulWidget {
   final String farmId;
@@ -74,19 +74,24 @@ class _PlotsPageState extends State<PlotsPage> {
   }
 
   Future<void> _setLocation(PlotEntity plot) async {
-    final result = await Navigator.push<LatLng>(
+    final initialPoints = decodeGeoPolygon(plot.geoJson);
+    final initialCenter =
+        initialPoints == null ? decodeGeoPoint(plot.geoJson) : null;
+
+    final result = await Navigator.push<List<LatLng>>(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            LocationPickerPage(initial: decodeGeoPoint(plot.geoJson)),
+        builder: (_) => PlotPolygonPickerPage(
+          initialPoints: initialPoints,
+          initialCenter: initialCenter,
+        ),
       ),
     );
     if (result != null) {
-      _plotsBloc.add(UpdatePlotLocation(
+      _plotsBloc.add(UpdatePlotShape(
         farmId: widget.farmId,
         plotId: plot.id,
-        lat: result.latitude,
-        lng: result.longitude,
+        points: result,
       ));
     }
   }

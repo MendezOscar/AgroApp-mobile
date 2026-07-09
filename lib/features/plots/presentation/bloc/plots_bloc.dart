@@ -1,8 +1,10 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:latlong2/latlong.dart';
 import '../../../../core/services/connectivity_service.dart';
 import '../../../../core/utils/geo_point.dart';
 import '../../data/repositories/plots_local_repository.dart';
+import '../../domain/entities/plot_entity.dart';
 import '../../domain/repositories/plots_repository.dart';
 import 'plots_event.dart';
 import 'plots_state.dart';
@@ -14,7 +16,7 @@ class PlotsBloc extends Bloc<PlotsEvent, PlotsState> {
   PlotsBloc(this._repository, this._localRepository) : super(PlotsInitial()) {
     on<LoadPlots>(_onLoadPlots);
     on<CreatePlot>(_onCreatePlot);
-    on<UpdatePlotLocation>(_onUpdatePlotLocation);
+    on<UpdatePlotShape>(_onUpdatePlotShape);
     on<DeletePlot>(_onDeletePlot);
   }
 
@@ -57,24 +59,52 @@ class PlotsBloc extends Bloc<PlotsEvent, PlotsState> {
       }
       add(LoadPlots(event.farmId));
     } catch (e) {
+      debugPrint('PlotsBloc._onCreatePlot error: $e');
+      final previous = state;
       emit(PlotsError('Error al crear la parcela.'));
+      if (previous is PlotsLoaded) emit(previous);
     }
   }
 
-  Future<void> _onUpdatePlotLocation(
-      UpdatePlotLocation event, Emitter<PlotsState> emit) async {
+  Future<void> _onUpdatePlotShape(
+      UpdatePlotShape event, Emitter<PlotsState> emit) async {
     try {
       final isOnline = await ConnectivityService.isOnline();
       if (!isOnline) {
-        emit(PlotsError('Sin conexión. No se puede actualizar la ubicación ahora.'));
+        final previous = state;
+        emit(PlotsError(
+            'Sin conexión. No se puede actualizar la ubicación ahora.'));
+        if (previous is PlotsLoaded) emit(previous);
         return;
       }
-      final geoJson = encodeGeoPoint(LatLng(event.lat, event.lng));
-      await _repository.updatePlot(
-          event.farmId, event.plotId, {'geoJson': geoJson});
+      PlotEntity? current;
+      if (state is PlotsLoaded) {
+        for (final p in (state as PlotsLoaded).plots) {
+          if (p.id == event.plotId) {
+            current = p;
+            break;
+          }
+        }
+      }
+
+      await _repository.updatePlot(event.farmId, event.plotId, {
+        'name': current?.name,
+        'soilType': current?.soilType,
+        'notes': current?.notes,
+        'areaHa': polygonAreaHectares(event.points),
+        'geoJson': encodeGeoPolygon(event.points),
+      });
       add(LoadPlots(event.farmId));
     } catch (e) {
+      if (e is DioException) {
+        debugPrint('PlotsBloc._onUpdatePlotShape: '
+            '${e.response?.statusCode} ${e.response?.data}');
+      } else {
+        debugPrint('PlotsBloc._onUpdatePlotShape error: $e');
+      }
+      final previous = state;
       emit(PlotsError('Error al actualizar la ubicación.'));
+      if (previous is PlotsLoaded) emit(previous);
     }
   }
 
@@ -85,10 +115,15 @@ class PlotsBloc extends Bloc<PlotsEvent, PlotsState> {
         await _repository.deletePlot(event.farmId, event.plotId);
         add(LoadPlots(event.farmId));
       } else {
+        final previous = state;
         emit(PlotsError('Sin conexión. No se puede eliminar ahora.'));
+        if (previous is PlotsLoaded) emit(previous);
       }
     } catch (e) {
+      debugPrint('PlotsBloc._onDeletePlot error: $e');
+      final previous = state;
       emit(PlotsError('Error al eliminar la parcela.'));
+      if (previous is PlotsLoaded) emit(previous);
     }
   }
 }

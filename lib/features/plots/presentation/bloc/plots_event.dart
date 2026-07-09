@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:latlong2/latlong.dart';
 
 abstract class PlotsEvent extends Equatable {
   @override
@@ -32,21 +33,19 @@ class CreatePlot extends PlotsEvent {
   List<Object?> get props => [farmId, name, soilType, areaHa, notes];
 }
 
-class UpdatePlotLocation extends PlotsEvent {
+class UpdatePlotShape extends PlotsEvent {
   final String farmId;
   final String plotId;
-  final double lat;
-  final double lng;
+  final List<LatLng> points;
 
-  UpdatePlotLocation({
+  UpdatePlotShape({
     required this.farmId,
     required this.plotId,
-    required this.lat,
-    required this.lng,
+    required this.points,
   });
 
   @override
-  List<Object?> get props => [farmId, plotId, lat, lng];
+  List<Object?> get props => [farmId, plotId, points];
 }
 
 class DeletePlot extends PlotsEvent {

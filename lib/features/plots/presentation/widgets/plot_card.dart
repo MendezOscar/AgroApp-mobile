@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/role_helper.dart';
 import '../../../../core/widgets/role_guard.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../domain/entities/plot_entity.dart';
 
 class PlotCard extends StatelessWidget {
@@ -67,35 +70,44 @@ class PlotCard extends StatelessWidget {
                 tooltip: 'Ver sensores',
               ),
             ),
-            // Menú opciones
-            PopupMenuButton(
-              itemBuilder: (_) => [
-                PopupMenuItem(
-                    value: 'location',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.location_on, color: AppTheme.primary),
-                        const SizedBox(width: 8),
-                        Text(plot.geoJson == null
-                            ? 'Ubicar en mapa'
-                            : 'Editar ubicación'),
-                      ],
-                    )),
-                const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete_outline, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Eliminar'),
-                      ],
-                    )),
-              ],
-              onSelected: (value) {
-                if (value == 'delete') onDelete();
-                if (value == 'location') onSetLocation();
-              },
-            ),
+            // Menú opciones (editar ubicación/eliminar requieren rol Admin/Manager,
+            // igual que el backend)
+            Builder(builder: (context) {
+              final authState = context.watch<AuthBloc>().state;
+              final canEdit = authState is AuthAuthenticated &&
+                  RoleHelper.canCreatePlot(authState.user.role);
+              if (!canEdit) return const SizedBox();
+
+              return PopupMenuButton(
+                itemBuilder: (_) => [
+                  PopupMenuItem(
+                      value: 'location',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.location_on,
+                              color: AppTheme.primary),
+                          const SizedBox(width: 8),
+                          Text(plot.geoJson == null
+                              ? 'Dibujar parcela en mapa'
+                              : 'Editar área'),
+                        ],
+                      )),
+                  const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Eliminar'),
+                        ],
+                      )),
+                ],
+                onSelected: (value) {
+                  if (value == 'delete') onDelete();
+                  if (value == 'location') onSetLocation();
+                },
+              );
+            }),
           ],
         ),
         onTap: onTap,
