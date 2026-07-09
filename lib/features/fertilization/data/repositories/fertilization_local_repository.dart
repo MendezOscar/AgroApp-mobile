@@ -40,6 +40,7 @@ class FertilizationLocalRepository {
   FertilizationEntity _fromMap(Map<String, dynamic> m) => FertilizationModel(
         id: m['id'],
         cropId: m['crop_id'],
+        taskId: m['task_id'],
         productName: m['product_name'],
         productType: m['product_type'],
         doseKgHa: m['dose_kg_ha'],
@@ -57,6 +58,7 @@ class FertilizationLocalRepository {
   Map<String, dynamic> _toMap(FertilizationEntity f) => {
         'id': f.id,
         'crop_id': f.cropId,
+        'task_id': f.taskId,
         'product_name': f.productName,
         'product_type': f.productType,
         'dose_kg_ha': f.doseKgHa,

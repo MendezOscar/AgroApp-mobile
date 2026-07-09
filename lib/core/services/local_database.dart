@@ -15,7 +15,7 @@ class LocalDatabase {
 
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -120,6 +120,7 @@ class LocalDatabase {
     CREATE TABLE irrigation_logs (
       id TEXT PRIMARY KEY,
       crop_id TEXT NOT NULL,
+      task_id TEXT,
       method TEXT NOT NULL,
       volume_liters REAL,
       duration_min INTEGER,
@@ -135,6 +136,7 @@ class LocalDatabase {
     CREATE TABLE fertilization_logs (
       id TEXT PRIMARY KEY,
       crop_id TEXT NOT NULL,
+      task_id TEXT,
       product_name TEXT NOT NULL,
       product_type TEXT,
       dose_kg_ha REAL,
@@ -154,6 +156,7 @@ class LocalDatabase {
     CREATE TABLE labor_logs (
       id TEXT PRIMARY KEY,
       crop_id TEXT NOT NULL,
+      task_id TEXT,
       activity_type TEXT NOT NULL,
       hours_worked REAL,
       workers_count INTEGER NOT NULL DEFAULT 1,
@@ -340,6 +343,13 @@ class LocalDatabase {
       created_at TEXT NOT NULL
     )
   ''');
+    }
+
+    if (oldVersion < 5) {
+      await db.execute('ALTER TABLE irrigation_logs ADD COLUMN task_id TEXT');
+      await db
+          .execute('ALTER TABLE fertilization_logs ADD COLUMN task_id TEXT');
+      await db.execute('ALTER TABLE labor_logs ADD COLUMN task_id TEXT');
     }
   }
 

@@ -42,75 +42,51 @@ class _UpdateStatusSheetState extends State<UpdateStatusSheet> {
     super.dispose();
   }
 
-  Future<bool> _showRegisterDialog(BuildContext context) async {
-    final taskType = widget.task.taskType;
-    if (taskType == 'Other' || taskType == 'Sensor') return false;
+  bool get _needsRegistration =>
+      ['Irrigation', 'Fertilization', 'Labor'].contains(widget.task.taskType) &&
+      widget.task.status != 'Completed';
 
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Row(
-          children: [
-            Text(widget.task.taskTypeIcon,
-                style: const TextStyle(fontSize: 24)),
-            const SizedBox(width: 8),
-            const Expanded(
-              child:
-                  Text('Registrar actividad', style: TextStyle(fontSize: 16)),
-            ),
-          ],
+  void _openRegisterSheet(BuildContext context) {
+    if (widget.task.cropId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Esta tarea no tiene un cultivo asociado'),
+          backgroundColor: AppTheme.error,
         ),
-        content: Text(
-          '¿Deseas registrar este ${widget.task.taskTypeLabel.toLowerCase()} '
-          'en el cultivo ahora?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('No, solo completar'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sí, registrar'),
-          ),
-        ],
-      ),
-    );
-    return result ?? false;
-  }
-
-  void _navigateToRegister(BuildContext context) {
-    if (widget.task.cropId == null) return;
-    final cropId = widget.task.cropId!;
-
-    switch (widget.task.taskType) {
-      case 'Irrigation':
-        _openSheet(context, cropId, 'irrigation');
-        break;
-      case 'Fertilization':
-        _openSheet(context, cropId, 'fertilization');
-        break;
-      case 'Labor':
-        _openSheet(context, cropId, 'labor');
-        break;
-      default:
-        break;
+      );
+      return;
     }
-  }
-
-  void _openSheet(BuildContext context, String cropId, String type) {
+    final cropId = widget.task.cropId!;
     final cubit = sl<CropDetailCubit>();
+    final tasksCubit = context.read<TasksCubit>();
+
+    void onRegistered() {
+      if (context.mounted) Navigator.of(context).pop();
+      tasksCubit.loadTasks(widget.task.status);
+    }
 
     Widget sheet;
-    switch (type) {
-      case 'irrigation':
-        sheet = AddIrrigationSheet(cropId: cropId);
+    switch (widget.task.taskType) {
+      case 'Irrigation':
+        sheet = AddIrrigationSheet(
+          cropId: cropId,
+          taskId: widget.task.id,
+          onRegistered: onRegistered,
+        );
         break;
-      case 'fertilization':
-        sheet = AddFertilizationSheet(cropId: cropId);
+      case 'Fertilization':
+        sheet = AddFertilizationSheet(
+          cropId: cropId,
+          taskId: widget.task.id,
+          onRegistered: onRegistered,
+        );
         break;
-      case 'labor':
-        sheet = AddLaborSheet(cropId: cropId);
+      case 'Labor':
+        sheet = AddLaborSheet(
+          cropId: cropId,
+          taskId: widget.task.id,
+          onRegistered: onRegistered,
+        );
         break;
       default:
         return;
@@ -202,7 +178,13 @@ class _UpdateStatusSheetState extends State<UpdateStatusSheet> {
             ..._statuses.map((s) {
               final isSelected = _selectedStatus == s['value'];
               return GestureDetector(
-                onTap: () => setState(() => _selectedStatus = s['value']!),
+                onTap: () {
+                  if (s['value'] == 'Completed' && _needsRegistration) {
+                    _openRegisterSheet(context);
+                  } else {
+                    setState(() => _selectedStatus = s['value']!);
+                  }
+                },
                 child: Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   padding:
@@ -261,33 +243,14 @@ class _UpdateStatusSheetState extends State<UpdateStatusSheet> {
               builder: (context, state) => ElevatedButton(
                 onPressed: state.isLoading
                     ? null
-                    : () async {
-                        if (_selectedStatus == 'Completed') {
-                          final shouldRegister =
-                              await _showRegisterDialog(context);
-
-                          if (!context.mounted) return;
-
-                          context.read<TasksCubit>().updateStatus(
-                                widget.task.id,
-                                _selectedStatus,
-                                _notesCtrl.text.isEmpty
-                                    ? null
-                                    : _notesCtrl.text,
-                              );
-
-                          if (shouldRegister && context.mounted) {
-                            _navigateToRegister(context);
-                          }
-                        } else {
-                          context.read<TasksCubit>().updateStatus(
-                                widget.task.id,
-                                _selectedStatus,
-                                _notesCtrl.text.isEmpty
-                                    ? null
-                                    : _notesCtrl.text,
-                              );
-                        }
+                    : () {
+                        context.read<TasksCubit>().updateStatus(
+                              widget.task.id,
+                              _selectedStatus,
+                              _notesCtrl.text.isEmpty
+                                  ? null
+                                  : _notesCtrl.text,
+                            );
                       },
                 child: state.isLoading
                     ? const CircularProgressIndicator(color: Colors.white)

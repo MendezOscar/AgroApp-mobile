@@ -41,6 +41,7 @@ class LaborLocalRepository {
   LaborEntity _fromMap(Map<String, dynamic> m) => LaborModel(
         id: m['id'],
         cropId: m['crop_id'],
+        taskId: m['task_id'],
         activityType: m['activity_type'],
         hoursWorked: m['hours_worked'],
         workersCount: m['workers_count'],
@@ -53,6 +54,7 @@ class LaborLocalRepository {
   Map<String, dynamic> _toMap(LaborEntity l) => {
         'id': l.id,
         'crop_id': l.cropId,
+        'task_id': l.taskId,
         'activity_type': l.activityType,
         'hours_worked': l.hoursWorked,
         'workers_count': l.workersCount,

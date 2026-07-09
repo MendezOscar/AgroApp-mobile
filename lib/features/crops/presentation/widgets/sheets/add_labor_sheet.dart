@@ -5,7 +5,14 @@ import '../../bloc/crop_detail_cubit.dart';
 
 class AddLaborSheet extends StatefulWidget {
   final String cropId;
-  const AddLaborSheet({super.key, required this.cropId});
+  final String? taskId;
+  final VoidCallback? onRegistered;
+  const AddLaborSheet({
+    super.key,
+    required this.cropId,
+    this.taskId,
+    this.onRegistered,
+  });
 
   @override
   State<AddLaborSheet> createState() => _AddLaborSheetState();
@@ -153,9 +160,11 @@ class _AddLaborSheetState extends State<AddLaborSheet> {
                             'notes': _notesCtrl.text.isEmpty
                                 ? null
                                 : _notesCtrl.text,
+                            'taskId': widget.taskId,
                           },
                         );
                         if (context.mounted) Navigator.pop(context);
+                        widget.onRegistered?.call();
                       }
                     },
               child: _loading

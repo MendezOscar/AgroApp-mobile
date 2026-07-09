@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../crops/data/datasources/crops_remote_datasource.dart';
 import '../../../farms/data/datasources/farms_remote_datasource.dart';
 import '../../../plots/data/datasources/plots_remote_datasource.dart';
 import '../../../users/data/datasources/users_remote_datasource.dart';
@@ -27,10 +28,16 @@ class _CreateTaskSheetState extends State<CreateTaskSheet> {
   DateTime _dueDate = DateTime.now().add(const Duration(days: 1));
   String? _assignedTo;
   String? _plotId;
+  String? _cropId;
 
   List<Map<String, dynamic>> _users = [];
   List<Map<String, dynamic>> _plots = [];
+  List<Map<String, dynamic>> _crops = [];
   bool _loadingData = true;
+  bool _loadingCrops = false;
+
+  bool get _needsCrop =>
+      ['Irrigation', 'Fertilization', 'Labor'].contains(_taskType);
 
   final _priorities = [
     {'value': 'Low', 'label': '⚪ Baja'},
@@ -86,6 +93,31 @@ class _CreateTaskSheetState extends State<CreateTaskSheet> {
       }
     } catch (e) {
       if (mounted) setState(() => _loadingData = false);
+    }
+  }
+
+  Future<void> _loadCrops(String plotId) async {
+    setState(() {
+      _loadingCrops = true;
+      _crops = [];
+      _cropId = null;
+    });
+    try {
+      final crops = await sl<CropsRemoteDatasource>().getCrops(plotId);
+      if (!mounted) return;
+      setState(() {
+        _crops = List<Map<String, dynamic>>.from(
+          crops.where((c) => c['status'] == 'Active').map((c) => {
+                'id': c['id'],
+                'name': [c['cropType'], c['variety']]
+                    .where((v) => v != null && (v as String).isNotEmpty)
+                    .join(' — '),
+              }),
+        );
+        _loadingCrops = false;
+      });
+    } catch (e) {
+      if (mounted) setState(() => _loadingCrops = false);
     }
   }
 
@@ -175,7 +207,17 @@ class _CreateTaskSheetState extends State<CreateTaskSheet> {
                             child: Text(t['label']!),
                           ))
                       .toList(),
-                  onChanged: (v) => setState(() => _taskType = v!),
+                  onChanged: (v) {
+                    setState(() => _taskType = v!);
+                    if (_needsCrop && _plotId != null) {
+                      _loadCrops(_plotId!);
+                    } else {
+                      setState(() {
+                        _crops = [];
+                        _cropId = null;
+                      });
+                    }
+                  },
                 ),
                 const SizedBox(height: 12),
 
@@ -209,19 +251,21 @@ class _CreateTaskSheetState extends State<CreateTaskSheet> {
                       ),
                 const SizedBox(height: 12),
 
-                // Parcela (opcional)
+                // Parcela (obligatoria si la tarea es de riego/fertilización/labor)
                 if (_plots.isNotEmpty)
                   DropdownButtonFormField<String>(
                     value: _plotId,
-                    decoration: const InputDecoration(
-                      labelText: 'Parcela (opcional)',
-                      prefixIcon: Icon(Icons.grid_view),
+                    decoration: InputDecoration(
+                      labelText:
+                          _needsCrop ? 'Parcela *' : 'Parcela (opcional)',
+                      prefixIcon: const Icon(Icons.grid_view),
                     ),
                     items: [
-                      const DropdownMenuItem(
-                        value: null,
-                        child: Text('Sin parcela específica'),
-                      ),
+                      if (!_needsCrop)
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('Sin parcela específica'),
+                        ),
                       ..._plots.map((p) => DropdownMenuItem(
                             value: p['id'] as String,
                             child: Text(
@@ -230,9 +274,52 @@ class _CreateTaskSheetState extends State<CreateTaskSheet> {
                             ),
                           )),
                     ],
-                    onChanged: (v) => setState(() => _plotId = v),
+                    onChanged: (v) {
+                      setState(() => _plotId = v);
+                      if (_needsCrop && v != null) {
+                        _loadCrops(v);
+                      } else {
+                        setState(() {
+                          _crops = [];
+                          _cropId = null;
+                        });
+                      }
+                    },
+                    validator: (v) =>
+                        _needsCrop && v == null ? 'Selecciona una parcela' : null,
                   ),
                 const SizedBox(height: 12),
+
+                // Cultivo (obligatorio si la tarea es de riego/fertilización/labor)
+                if (_needsCrop)
+                  _loadingCrops
+                      ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16),
+                            child: CircularProgressIndicator(
+                                color: AppTheme.primary),
+                          ),
+                        )
+                      : DropdownButtonFormField<String>(
+                          value: _cropId,
+                          decoration: const InputDecoration(
+                            labelText: 'Cultivo *',
+                            prefixIcon: Icon(Icons.eco_outlined),
+                          ),
+                          items: _crops
+                              .map((c) => DropdownMenuItem(
+                                    value: c['id'] as String,
+                                    child: Text(
+                                      c['name'] as String,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ))
+                              .toList(),
+                          onChanged: (v) => setState(() => _cropId = v),
+                          validator: (v) =>
+                              v == null ? 'Selecciona un cultivo activo' : null,
+                        ),
+                if (_needsCrop) const SizedBox(height: 12),
 
                 // Prioridad y fecha en fila
                 Row(
@@ -290,7 +377,7 @@ class _CreateTaskSheetState extends State<CreateTaskSheet> {
                               context.read<TasksCubit>().createTask({
                                 'assignedTo': _assignedTo,
                                 'plotId': _plotId,
-                                'cropId': null,
+                                'cropId': _cropId,
                                 'title': _titleCtrl.text.trim(),
                                 'description': _descCtrl.text.isEmpty
                                     ? null

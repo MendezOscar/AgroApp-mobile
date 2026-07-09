@@ -122,6 +122,7 @@ Future<void> initDependencies() async {
         fertilizationLocal: sl(),
         laborLocal: sl(),
         imagesLocal: sl(), // ← nuevo
+        tasksLocal: sl(),
       ));
 
   // ─── Alerts ───────────────────────────────────────────────

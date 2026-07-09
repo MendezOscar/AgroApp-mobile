@@ -4,6 +4,7 @@ class LaborModel extends LaborEntity {
   const LaborModel({
     required super.id,
     required super.cropId,
+    super.taskId,
     required super.activityType,
     super.hoursWorked,
     required super.workersCount,
@@ -16,6 +17,7 @@ class LaborModel extends LaborEntity {
   factory LaborModel.fromJson(Map<String, dynamic> json) => LaborModel(
         id: json['id'],
         cropId: json['cropId'],
+        taskId: json['taskId'],
         activityType: json['activityType'],
         hoursWorked: (json['hoursWorked'] as num?)?.toDouble(),
         workersCount: json['workersCount'],

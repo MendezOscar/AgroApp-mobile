@@ -4,6 +4,7 @@ class FertilizationModel extends FertilizationEntity {
   const FertilizationModel({
     required super.id,
     required super.cropId,
+    super.taskId,
     required super.productName,
     super.productType,
     super.doseKgHa,
@@ -20,6 +21,7 @@ class FertilizationModel extends FertilizationEntity {
       FertilizationModel(
         id: json['id'],
         cropId: json['cropId'],
+        taskId: json['taskId'],
         productName: json['productName'],
         productType: json['productType'],
         doseKgHa: (json['doseKgHa'] as num?)?.toDouble(),

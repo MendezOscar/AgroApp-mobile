@@ -40,6 +40,7 @@ class IrrigationLocalRepository {
   IrrigationEntity _fromMap(Map<String, dynamic> m) => IrrigationModel(
         id: m['id'],
         cropId: m['crop_id'],
+        taskId: m['task_id'],
         method: m['method'],
         volumeLiters: m['volume_liters'],
         durationMin: m['duration_min'],
@@ -51,6 +52,7 @@ class IrrigationLocalRepository {
   Map<String, dynamic> _toMap(IrrigationEntity i) => {
         'id': i.id,
         'crop_id': i.cropId,
+        'task_id': i.taskId,
         'method': i.method,
         'volume_liters': i.volumeLiters,
         'duration_min': i.durationMin,

@@ -4,6 +4,7 @@ class IrrigationModel extends IrrigationEntity {
   const IrrigationModel({
     required super.id,
     required super.cropId,
+    super.taskId,
     required super.method,
     super.volumeLiters,
     super.durationMin,
@@ -16,6 +17,7 @@ class IrrigationModel extends IrrigationEntity {
       IrrigationModel(
         id: json['id'],
         cropId: json['cropId'],
+        taskId: json['taskId'],
         method: json['method'],
         volumeLiters: (json['volumeLiters'] as num?)?.toDouble(),
         durationMin: json['durationMin'],

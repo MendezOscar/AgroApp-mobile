@@ -5,7 +5,14 @@ import '../../bloc/crop_detail_cubit.dart';
 
 class AddIrrigationSheet extends StatefulWidget {
   final String cropId;
-  const AddIrrigationSheet({super.key, required this.cropId});
+  final String? taskId;
+  final VoidCallback? onRegistered;
+  const AddIrrigationSheet({
+    super.key,
+    required this.cropId,
+    this.taskId,
+    this.onRegistered,
+  });
 
   @override
   State<AddIrrigationSheet> createState() => _AddIrrigationSheetState();
@@ -130,9 +137,11 @@ class _AddIrrigationSheetState extends State<AddIrrigationSheet> {
                           'appliedAt': _appliedAt.toUtc().toIso8601String(),
                           'notes':
                               _notesCtrl.text.isEmpty ? null : _notesCtrl.text,
+                          'taskId': widget.taskId,
                         },
                       );
                       if (context.mounted) Navigator.pop(context);
+                      widget.onRegistered?.call();
                     },
               child: _loading
                   ? const CircularProgressIndicator(color: Colors.white)

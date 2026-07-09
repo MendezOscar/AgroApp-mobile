@@ -1,6 +1,7 @@
 class FertilizationEntity {
   final String id;
   final String cropId;
+  final String? taskId;
   final String productName;
   final String? productType;
   final double? doseKgHa;
@@ -15,6 +16,7 @@ class FertilizationEntity {
   const FertilizationEntity({
     required this.id,
     required this.cropId,
+    this.taskId,
     required this.productName,
     this.productType,
     this.doseKgHa,

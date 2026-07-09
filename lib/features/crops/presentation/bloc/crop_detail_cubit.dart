@@ -14,6 +14,7 @@ import '../../../irrigation/data/repositories/irrigation_local_repository.dart';
 import '../../../labor/data/datasources/labor_remote_datasource.dart';
 import '../../../labor/data/models/labor_model.dart';
 import '../../../labor/data/repositories/labor_local_repository.dart';
+import '../../../task/data/repositories/tasks_local_repository.dart';
 import '../../data/models/ai_diagnosis_model.dart';
 import 'crop_detail_state.dart';
 
@@ -26,6 +27,7 @@ class CropDetailCubit extends SafeCubit<CropDetailState> {
   final FertilizationLocalRepository _fertilizationLocal;
   final LaborLocalRepository _laborLocal;
   final CropImagesLocalRepository _imagesLocal;
+  final TasksLocalRepository _tasksLocal;
 
   CropDetailCubit({
     required IrrigationRemoteDatasource irrigationDs,
@@ -36,6 +38,7 @@ class CropDetailCubit extends SafeCubit<CropDetailState> {
     required FertilizationLocalRepository fertilizationLocal,
     required LaborLocalRepository laborLocal,
     required CropImagesLocalRepository imagesLocal,
+    required TasksLocalRepository tasksLocal,
   })  : _irrigationDs = irrigationDs,
         _fertilizationDs = fertilizationDs,
         _laborDs = laborDs,
@@ -44,6 +47,7 @@ class CropDetailCubit extends SafeCubit<CropDetailState> {
         _fertilizationLocal = fertilizationLocal,
         _laborLocal = laborLocal,
         _imagesLocal = imagesLocal,
+        _tasksLocal = tasksLocal,
         super(const CropDetailState());
 
   // ─── Irrigation ───────────────────────────────────────────
@@ -124,6 +128,7 @@ class CropDetailCubit extends SafeCubit<CropDetailState> {
           IrrigationModel(
             id: 'local_${DateTime.now().millisecondsSinceEpoch}',
             cropId: cropId,
+            taskId: data['taskId'],
             method: data['method'] ?? '',
             volumeLiters: (data['volumeLiters'] as num?)?.toDouble(),
             durationMin: data['durationMin'] as int?,
@@ -134,6 +139,11 @@ class CropDetailCubit extends SafeCubit<CropDetailState> {
           ),
           ...await _irrigationLocal.getIrrigations(cropId),
         ]);
+
+        if (data['taskId'] != null) {
+          await _tasksLocal.updateTaskStatus(
+              data['taskId'], 'Completed', data['notes']);
+        }
       }
       await loadIrrigations(cropId);
     } catch (e) {
@@ -229,6 +239,7 @@ class CropDetailCubit extends SafeCubit<CropDetailState> {
           FertilizationModel(
             id: 'local_${DateTime.now().millisecondsSinceEpoch}',
             cropId: cropId,
+            taskId: data['taskId'],
             productName: data['productName'] ?? '',
             productType: data['productType'],
             doseKgHa: (data['doseKgHa'] as num?)?.toDouble(),
@@ -243,6 +254,11 @@ class CropDetailCubit extends SafeCubit<CropDetailState> {
           ),
           ...await _fertilizationLocal.getFertilizations(cropId),
         ]);
+
+        if (data['taskId'] != null) {
+          await _tasksLocal.updateTaskStatus(
+              data['taskId'], 'Completed', data['notes']);
+        }
       }
       await loadFertilizations(cropId);
     } catch (e) {
@@ -333,6 +349,7 @@ class CropDetailCubit extends SafeCubit<CropDetailState> {
           LaborModel(
             id: 'local_${DateTime.now().millisecondsSinceEpoch}',
             cropId: cropId,
+            taskId: data['taskId'],
             activityType: data['activityType'] ?? '',
             hoursWorked: (data['hoursWorked'] as num?)?.toDouble(),
             workersCount: data['workersCount'] as int? ?? 1,
@@ -344,6 +361,11 @@ class CropDetailCubit extends SafeCubit<CropDetailState> {
           ),
           ...await _laborLocal.getLabors(cropId),
         ]);
+
+        if (data['taskId'] != null) {
+          await _tasksLocal.updateTaskStatus(
+              data['taskId'], 'Completed', data['notes']);
+        }
       }
       await loadLabors(cropId);
     } catch (e) {
