@@ -57,7 +57,13 @@ final sl = GetIt.instance;
 
 Future<void> initDependencies() async {
   // ─── Storage ──────────────────────────────────────────────
-  const storage = FlutterSecureStorage();
+  // encryptedSharedPreferences: en Android, el backend legacy (default)
+  // puede perder los valores guardados tras matar el proceso en background
+  // por varias horas (issue conocido de flutter_secure_storage); el backend
+  // de EncryptedSharedPreferences es más estable para sesiones de larga vida.
+  const storage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
   sl.registerSingleton<FlutterSecureStorage>(storage);
 
   // ─── Dio ──────────────────────────────────────────────────
