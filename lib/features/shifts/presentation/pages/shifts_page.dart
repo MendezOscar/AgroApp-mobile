@@ -48,6 +48,44 @@ class _ShiftsPageState extends State<ShiftsPage>
     super.dispose();
   }
 
+  // Mismo corte que ShiftType en el backend: Day 06:00-18:00, Night 18:00-06:00.
+  bool _isCurrentShift({required bool isDay}) {
+    final hour = DateTime.now().hour;
+    final isDayNow = hour >= 6 && hour < 18;
+    return isDay ? isDayNow : !isDayNow;
+  }
+
+  Widget _buildShiftTab(IconData icon, String label, bool isCurrent) {
+    return Tab(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 6),
+          Text(label),
+          if (isCurrent) ...[
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.orangeAccent,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'AHORA',
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   void _showCreateTurno() {
     showModalBottomSheet(
       context: context,
@@ -122,9 +160,11 @@ class _ShiftsPageState extends State<ShiftsPage>
             indicatorColor: Colors.white,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
-            tabs: const [
-              Tab(icon: Icon(Icons.wb_sunny), text: 'Diurno'),
-              Tab(icon: Icon(Icons.nights_stay), text: 'Nocturno'),
+            tabs: [
+              _buildShiftTab(
+                  Icons.wb_sunny, 'Diurno', _isCurrentShift(isDay: true)),
+              _buildShiftTab(
+                  Icons.nights_stay, 'Nocturno', _isCurrentShift(isDay: false)),
             ],
           ),
         ),

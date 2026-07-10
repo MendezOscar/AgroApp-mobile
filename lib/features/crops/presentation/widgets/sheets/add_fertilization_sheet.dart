@@ -29,7 +29,6 @@ class _AddFertilizationSheetState extends State<AddFertilizationSheet> {
   final _formKey = GlobalKey<FormState>();
   final _productNameCtrl = TextEditingController();
   final _totalKgCtrl = TextEditingController();
-  final _costCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
   String? _productType;
   String _method = 'manual';
@@ -45,7 +44,6 @@ class _AddFertilizationSheetState extends State<AddFertilizationSheet> {
   void dispose() {
     _productNameCtrl.dispose();
     _totalKgCtrl.dispose();
-    _costCtrl.dispose();
     _notesCtrl.dispose();
     super.dispose();
   }
@@ -113,25 +111,12 @@ class _AddFertilizationSheetState extends State<AddFertilizationSheet> {
                 ),
               ]),
               const SizedBox(height: 12),
-              Row(children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _totalKgCtrl,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(labelText: 'Total (kg)'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _costCtrl,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(labelText: 'Costo (L.)'),
-                  ),
-                ),
-              ]),
+              TextFormField(
+                controller: _totalKgCtrl,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(labelText: 'Total (kg)'),
+              ),
               const SizedBox(height: 12),
               InkWell(
                 onTap: () async {
@@ -192,9 +177,6 @@ class _AddFertilizationSheetState extends State<AddFertilizationSheet> {
                               'totalKg': _totalKgCtrl.text.isEmpty
                                   ? null
                                   : double.tryParse(_totalKgCtrl.text),
-                              'cost': _costCtrl.text.isEmpty
-                                  ? null
-                                  : double.tryParse(_costCtrl.text),
                               'appliedAt': _appliedAt.toUtc().toIso8601String(),
                               'nextApplication': _nextApplication
                                   ?.toUtc()

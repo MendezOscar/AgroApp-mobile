@@ -10,6 +10,7 @@ import '../../../auth/presentation/bloc/auth_state.dart';
 import '../bloc/users_cubit.dart';
 import '../bloc/users_state.dart';
 import 'users_management_page.dart';
+import '../../../costs/presentation/pages/pending_costs_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -88,6 +89,21 @@ class ProfilePage extends StatelessWidget {
                             create: (_) => sl<UsersCubit>()..loadUsers(),
                             child: const UsersManagementPage(),
                           ),
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (RoleHelper.canManageCosts(user.role)) ...[
+                    const Divider(height: 0),
+                    ListTile(
+                      leading: const Icon(Icons.payments_outlined,
+                          color: AppTheme.primary),
+                      title: const Text('Costos pendientes'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PendingCostsPage(),
                         ),
                       ),
                     ),

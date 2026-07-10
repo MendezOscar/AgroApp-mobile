@@ -25,7 +25,6 @@ class _AddLaborSheetState extends State<AddLaborSheet> {
   final _formKey = GlobalKey<FormState>();
   final _hoursCtrl = TextEditingController();
   final _workersCtrl = TextEditingController(text: '1');
-  final _costCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
   String _activityType = 'deshierbe';
   DateTime _performedAt = DateTime.now();
@@ -46,7 +45,6 @@ class _AddLaborSheetState extends State<AddLaborSheet> {
   void dispose() {
     _hoursCtrl.dispose();
     _workersCtrl.dispose();
-    _costCtrl.dispose();
     _notesCtrl.dispose();
     super.dispose();
   }
@@ -111,13 +109,6 @@ class _AddLaborSheetState extends State<AddLaborSheet> {
               ),
             ]),
             const SizedBox(height: 12),
-            TextFormField(
-              controller: _costCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Costo (L.)'),
-            ),
-            const SizedBox(height: 12),
             InkWell(
               onTap: () async {
                 final picked = await showDatePicker(
@@ -155,9 +146,6 @@ class _AddLaborSheetState extends State<AddLaborSheet> {
                             'hoursWorked': _hoursCtrl.text.isEmpty
                                 ? null
                                 : double.tryParse(_hoursCtrl.text),
-                            'cost': _costCtrl.text.isEmpty
-                                ? null
-                                : double.tryParse(_costCtrl.text),
                             'performedAt':
                                 _performedAt.toUtc().toIso8601String(),
                             'notes': _notesCtrl.text.isEmpty
