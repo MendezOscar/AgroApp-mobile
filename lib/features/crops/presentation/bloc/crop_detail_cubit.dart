@@ -14,6 +14,8 @@ import '../../../irrigation/data/repositories/irrigation_local_repository.dart';
 import '../../../labor/data/datasources/labor_remote_datasource.dart';
 import '../../../labor/data/models/labor_model.dart';
 import '../../../labor/data/repositories/labor_local_repository.dart';
+import '../../../sales/data/datasources/sales_remote_datasource.dart';
+import '../../../sales/data/models/crop_sale_model.dart';
 import '../../../task/data/repositories/tasks_local_repository.dart';
 import '../../data/models/ai_diagnosis_model.dart';
 import 'crop_detail_state.dart';
@@ -23,6 +25,7 @@ class CropDetailCubit extends SafeCubit<CropDetailState> {
   final FertilizationRemoteDatasource _fertilizationDs;
   final LaborRemoteDatasource _laborDs;
   final CropImagesRemoteDatasource _imagesDs;
+  final SalesRemoteDatasource _salesDs;
   final IrrigationLocalRepository _irrigationLocal;
   final FertilizationLocalRepository _fertilizationLocal;
   final LaborLocalRepository _laborLocal;
@@ -34,6 +37,7 @@ class CropDetailCubit extends SafeCubit<CropDetailState> {
     required FertilizationRemoteDatasource fertilizationDs,
     required LaborRemoteDatasource laborDs,
     required CropImagesRemoteDatasource imagesDs,
+    required SalesRemoteDatasource salesDs,
     required IrrigationLocalRepository irrigationLocal,
     required FertilizationLocalRepository fertilizationLocal,
     required LaborLocalRepository laborLocal,
@@ -43,6 +47,7 @@ class CropDetailCubit extends SafeCubit<CropDetailState> {
         _fertilizationDs = fertilizationDs,
         _laborDs = laborDs,
         _imagesDs = imagesDs,
+        _salesDs = salesDs,
         _irrigationLocal = irrigationLocal,
         _fertilizationLocal = fertilizationLocal,
         _laborLocal = laborLocal,
@@ -447,6 +452,31 @@ class CropDetailCubit extends SafeCubit<CropDetailState> {
     } catch (e) {
       emit(state.copyWith(
           isAnalyzing: false, error: 'Error al analizar imagen'));
+    }
+  }
+
+  // ─── Sales ────────────────────────────────────────────────
+
+  Future<void> loadSales(String cropId) async {
+    emit(state.copyWith(isLoadingSales: true, error: null));
+    try {
+      final data = await _salesDs.getSales(cropId);
+      emit(state.copyWith(
+        sales: data.map((e) => CropSaleModel.fromJson(e)).toList(),
+        isLoadingSales: false,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+          isLoadingSales: false, error: 'Error al cargar ventas'));
+    }
+  }
+
+  Future<void> createSale(String cropId, Map<String, dynamic> data) async {
+    try {
+      await _salesDs.createSale(cropId, data);
+      await loadSales(cropId);
+    } catch (e) {
+      emit(state.copyWith(error: 'Error al registrar venta'));
     }
   }
 

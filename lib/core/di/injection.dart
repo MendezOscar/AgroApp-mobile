@@ -32,6 +32,8 @@ import '../../features/labor/data/repositories/labor_local_repository.dart';
 import '../../features/phenology/data/datasources/phenology_remote_datasource.dart';
 import '../../features/phenology/presentation/bloc/phenology_cubit.dart';
 import '../../features/plots/data/datasources/plots_remote_datasource.dart';
+import '../../features/plots/data/datasources/soil_analysis_remote_datasource.dart';
+import '../../features/sales/data/datasources/sales_remote_datasource.dart';
 import '../../features/plots/data/repositories/plots_local_repository.dart';
 import '../../features/plots/data/repositories/plots_repository_impl.dart';
 import '../../features/plots/domain/repositories/plots_repository.dart';
@@ -88,6 +90,8 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<PlotsRepository>(() => PlotsRepositoryImpl(sl()));
   sl.registerLazySingleton<PlotsLocalRepository>(() => PlotsLocalRepository());
   sl.registerFactory<PlotsBloc>(() => PlotsBloc(sl(), sl()));
+  sl.registerLazySingleton<SoilAnalysisRemoteDatasource>(
+      () => SoilAnalysisRemoteDatasource(sl()));
 
   // ─── Crops ────────────────────────────────────────────────
   sl.registerLazySingleton<CropsRemoteDatasource>(
@@ -107,6 +111,8 @@ Future<void> initDependencies() async {
       () => LaborRemoteDatasource(sl()));
   sl.registerLazySingleton<CropImagesRemoteDatasource>(
       () => CropImagesRemoteDatasource(sl()));
+  sl.registerLazySingleton<SalesRemoteDatasource>(
+      () => SalesRemoteDatasource(sl()));
 
   // ─── Repositorios locales ─────────────────────────────────
   sl.registerLazySingleton<IrrigationLocalRepository>(
@@ -123,6 +129,7 @@ Future<void> initDependencies() async {
         fertilizationDs: sl(),
         laborDs: sl(),
         imagesDs: sl(),
+        salesDs: sl(),
         irrigationLocal: sl(),
         fertilizationLocal: sl(),
         laborLocal: sl(),

@@ -3,6 +3,7 @@ import '../../../irrigation/domain/entities/irrigation_entity.dart';
 import '../../../fertilization/domain/entities/fertilization_entity.dart';
 import '../../../labor/domain/entities/labor_entity.dart';
 import '../../../crop_images/domain/entities/crop_image_entity.dart';
+import '../../../sales/domain/entities/crop_sale_entity.dart';
 import '../../data/models/ai_diagnosis_model.dart';
 
 class CropDetailState extends Equatable {
@@ -11,10 +12,12 @@ class CropDetailState extends Equatable {
   final AiDiagnosisModel? aiDiagnosis;
   final List<LaborEntity> labors;
   final List<CropImageEntity> images;
+  final List<CropSaleEntity> sales;
   final bool isLoadingIrrigation;
   final bool isLoadingFertilization;
   final bool isLoadingLabor;
   final bool isLoadingImages;
+  final bool isLoadingSales;
   final bool isOffline;
   final String? error;
   final bool isAnalyzing; // ← nuevo
@@ -37,11 +40,13 @@ class CropDetailState extends Equatable {
     this.fertilizations = const [],
     this.labors = const [],
     this.images = const [],
+    this.sales = const [],
     this.aiDiagnosis,
     this.isLoadingIrrigation = false,
     this.isLoadingFertilization = false,
     this.isLoadingLabor = false,
     this.isLoadingImages = false,
+    this.isLoadingSales = false,
     this.isOffline = false,
     this.error,
     this.isAnalyzing = false,
@@ -62,10 +67,12 @@ class CropDetailState extends Equatable {
     List<LaborEntity>? labors,
     AiDiagnosisModel? aiDiagnosis,
     List<CropImageEntity>? images,
+    List<CropSaleEntity>? sales,
     bool? isLoadingIrrigation,
     bool? isLoadingFertilization,
     bool? isLoadingLabor,
     bool? isLoadingImages,
+    bool? isLoadingSales,
     bool? isOffline,
     String? error,
     bool? isAnalyzing,
@@ -84,12 +91,14 @@ class CropDetailState extends Equatable {
         fertilizations: fertilizations ?? this.fertilizations,
         labors: labors ?? this.labors,
         images: images ?? this.images,
+        sales: sales ?? this.sales,
         aiDiagnosis: aiDiagnosis ?? this.aiDiagnosis,
         isLoadingIrrigation: isLoadingIrrigation ?? this.isLoadingIrrigation,
         isLoadingFertilization:
             isLoadingFertilization ?? this.isLoadingFertilization,
         isLoadingLabor: isLoadingLabor ?? this.isLoadingLabor,
         isLoadingImages: isLoadingImages ?? this.isLoadingImages,
+        isLoadingSales: isLoadingSales ?? this.isLoadingSales,
         isOffline: isOffline ?? this.isOffline,
         error: error,
         isAnalyzing: isAnalyzing ?? this.isAnalyzing,
@@ -114,11 +123,13 @@ class CropDetailState extends Equatable {
         fertilizations,
         labors,
         images,
+        sales,
         aiDiagnosis,
         isLoadingIrrigation,
         isLoadingFertilization,
         isLoadingLabor,
         isLoadingImages,
+        isLoadingSales,
         isOffline,
         error,
         irrigationPage,

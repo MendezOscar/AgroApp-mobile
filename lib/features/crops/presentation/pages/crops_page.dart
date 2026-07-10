@@ -15,6 +15,7 @@ import '../bloc/crops_event.dart';
 import '../bloc/crops_state.dart';
 import '../widgets/crop_card.dart';
 import '../widgets/create_crop_bottom_sheet.dart';
+import '../../../plots/presentation/widgets/soil_analysis_sheet.dart';
 
 class CropsPage extends StatefulWidget {
   final String plotId;
@@ -52,6 +53,17 @@ class _CropsPageState extends State<CropsPage> {
             c.cropType.toLowerCase().contains(q) ||
             (c.variety?.toLowerCase().contains(q) ?? false))
         .toList();
+  }
+
+  void _showSoilAnalysis() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SoilAnalysisSheet(plotId: widget.plotId),
+    );
   }
 
   void _showCreateCrop() {
@@ -98,7 +110,16 @@ class _CropsPageState extends State<CropsPage> {
       value: _cropsBloc,
       child: Scaffold(
         backgroundColor: AppTheme.background,
-        appBar: AppBar(title: Text(widget.plotName)),
+        appBar: AppBar(
+          title: Text(widget.plotName),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.eco_outlined),
+              tooltip: 'Análisis de suelo',
+              onPressed: _showSoilAnalysis,
+            ),
+          ],
+        ),
         body: BlocConsumer<CropsBloc, CropsState>(
           listener: (context, state) {
             if (state is CropsError) {

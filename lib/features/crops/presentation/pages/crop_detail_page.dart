@@ -25,6 +25,8 @@ import '../widgets/tabs/fertilization_tab.dart';
 import '../widgets/tabs/images_tab.dart';
 import '../widgets/tabs/irrigation_tab.dart';
 import '../widgets/tabs/labor_tab.dart';
+import '../widgets/tabs/sales_tab.dart';
+import '../widgets/sheets/add_sale_sheet.dart';
 import '../widgets/sheets/add_fertilization_sheet.dart';
 import '../widgets/sheets/add_irrigation_sheet.dart';
 import '../widgets/sheets/add_labor_sheet.dart';
@@ -191,7 +193,7 @@ class _CropDetailPageState extends State<CropDetailPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
     _cubit = sl<CropDetailCubit>();
 
     _cubit.loadIrrigations(widget.crop.id);
@@ -214,6 +216,9 @@ class _CropDetailPageState extends State<CropDetailPage>
           break;
         case 4:
           break;
+        case 5:
+          _cubit.loadSales(widget.crop.id);
+          break;
       }
     });
   }
@@ -229,8 +234,10 @@ class _CropDetailPageState extends State<CropDetailPage>
     final cropId = widget.crop.id;
     final Widget? sheet = switch (_tabController.index) {
       0 => AddIrrigationSheet(cropId: cropId),
-      1 => AddFertilizationSheet(cropId: cropId),
+      1 => AddFertilizationSheet(
+          cropId: cropId, plotId: widget.crop.plotId),
       2 => AddLaborSheet(cropId: cropId),
+      5 => AddSaleSheet(cropId: cropId),
       _ => null,
     };
 
@@ -337,7 +344,8 @@ class _CropDetailPageState extends State<CropDetailPage>
                   indicatorColor: Colors.white,
                   labelColor: Colors.white,
                   unselectedLabelColor: Colors.white70,
-                  isScrollable: false,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
                   tabs: const [
                     Tab(icon: Icon(Icons.water_drop, size: 20), text: 'Riego'),
                     Tab(
@@ -352,6 +360,9 @@ class _CropDetailPageState extends State<CropDetailPage>
                     Tab(
                         icon: Icon(Icons.timeline, size: 20),
                         text: 'Fenología'),
+                    Tab(
+                        icon: Icon(Icons.sell_outlined, size: 20),
+                        text: 'Ventas'),
                   ],
                 ),
               ),
@@ -382,7 +393,8 @@ class _CropDetailPageState extends State<CropDetailPage>
                           cropType: widget.crop.cropType,
                           embedded: true,
                         ),
-                      )
+                      ),
+                      SalesTab(cropId: widget.crop.id),
                     ],
                   ),
                 ),
@@ -390,21 +402,20 @@ class _CropDetailPageState extends State<CropDetailPage>
             ),
           ),
         ),
-        // FAB de agregar riego/fertilización/labor
+        // FAB de agregar riego/fertilización/labor/venta
         floatingActionButton: BlocBuilder<CropDetailCubit, CropDetailState>(
           builder: (context, state) {
+            const labels = {0: 'Riego', 1: 'Fertilización', 2: 'Labor', 5: 'Venta'};
+            final label = labels[_tabController.index];
             // Ocultar en Fotos (3) y Fenología (4)
-            if (_tabController.index >= 3) return const SizedBox();
+            if (label == null) return const SizedBox();
 
             return RoleGuard(
               permission: RoleHelper.canRegisterActivity,
               child: FloatingActionButton.extended(
                 backgroundColor: AppTheme.primary,
                 icon: const Icon(Icons.add, color: Colors.white),
-                label: Text(
-                  ['Riego', 'Fertilización', 'Labor'][_tabController.index],
-                  style: const TextStyle(color: Colors.white),
-                ),
+                label: Text(label, style: const TextStyle(color: Colors.white)),
                 onPressed: _showAddSheet,
               ),
             );
