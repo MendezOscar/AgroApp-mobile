@@ -242,37 +242,69 @@ class _PhenologyPageState extends State<PhenologyPage> {
                 ),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    state.activeStage!.icon ?? '🌱',
-                    style: const TextStyle(fontSize: 40),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Etapa actual',
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                  Row(
+                    children: [
+                      Text(
+                        state.activeStage!.icon ?? '🌱',
+                        style: const TextStyle(fontSize: 40),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Etapa actual',
+                              style: TextStyle(
+                                  color: Colors.white70, fontSize: 12),
+                            ),
+                            Text(
+                              state.activeStage!.stageName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'Día ${state.activeStage!.daysInStage} en esta etapa',
+                              style: const TextStyle(
+                                  color: Colors.white70, fontSize: 12),
+                            ),
+                          ],
                         ),
-                        Text(
-                          state.activeStage!.stageName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                      ),
+                    ],
+                  ),
+                  if (state.activeStage!.recommendations != null &&
+                      state.activeStage!.recommendations!.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.lightbulb_outline,
+                              color: Colors.white, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              state.activeStage!.recommendations!,
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 12.5),
+                            ),
                           ),
-                        ),
-                        Text(
-                          'Día ${state.activeStage!.daysInStage} en esta etapa',
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 12),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),

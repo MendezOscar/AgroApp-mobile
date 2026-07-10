@@ -44,7 +44,6 @@ import '../../features/shifts/data/repositories/shifts_local_repository.dart';
 import '../../features/shifts/presentation/bloc/shifts_cubit.dart';
 import '../../features/task/data/datasources/tasks_remote_datasource.dart';
 import '../../features/task/data/repositories/tasks_local_repository.dart';
-import '../../features/task/presentation/bloc/tasks_cubit.dart';
 import '../../features/costs/data/datasources/costs_remote_datasource.dart';
 import '../../features/users/data/datasources/users_remote_datasource.dart';
 import '../../features/users/presentation/bloc/users_cubit.dart';
@@ -152,10 +151,12 @@ Future<void> initDependencies() async {
   sl.registerFactory<UsersCubit>(() => UsersCubit(sl()));
 
   // ─── Tasks ───────────────────────────────────────────────
+  // Tareas ya no se crean de forma independiente (ver Shifts) — el
+  // datasource/repositorio se mantienen solo para el cache offline
+  // que usa InitialSyncService.
   sl.registerLazySingleton<TasksRemoteDatasource>(// ← agregar
       () => TasksRemoteDatasource(sl()));
   sl.registerLazySingleton<TasksLocalRepository>(() => TasksLocalRepository());
-  sl.registerFactory<TasksCubit>(() => TasksCubit(sl(), sl(), sl()));
 
   // ─── Shifts ──────────────────────────────────────────────
   sl.registerLazySingleton<ShiftsRemoteDatasource>(// ← agregar

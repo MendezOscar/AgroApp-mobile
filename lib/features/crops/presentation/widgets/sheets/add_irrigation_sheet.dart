@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import '../../../../phenology/presentation/widgets/phenology_recommendation_banner.dart';
 import '../../bloc/crop_detail_cubit.dart';
 
 class AddIrrigationSheet extends StatefulWidget {
   final String cropId;
   final String? taskId;
+  final String? occurrenceId;
   final VoidCallback? onRegistered;
   const AddIrrigationSheet({
     super.key,
     required this.cropId,
     this.taskId,
+    this.occurrenceId,
     this.onRegistered,
   });
 
@@ -22,6 +25,7 @@ class _AddIrrigationSheetState extends State<AddIrrigationSheet> {
   final _formKey = GlobalKey<FormState>();
   final _volumeCtrl = TextEditingController();
   final _durationCtrl = TextEditingController();
+  final _costCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
   String _method = 'goteo';
   DateTime _appliedAt = DateTime.now();
@@ -34,6 +38,7 @@ class _AddIrrigationSheetState extends State<AddIrrigationSheet> {
   void dispose() {
     _volumeCtrl.dispose();
     _durationCtrl.dispose();
+    _costCtrl.dispose();
     _notesCtrl.dispose();
     super.dispose();
   }
@@ -67,6 +72,7 @@ class _AddIrrigationSheetState extends State<AddIrrigationSheet> {
                     .titleLarge
                     ?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
+            PhenologyRecommendationBanner(cropId: widget.cropId),
             DropdownButtonFormField<String>(
               value: _method,
               decoration: const InputDecoration(labelText: 'Método de riego'),
@@ -96,6 +102,12 @@ class _AddIrrigationSheetState extends State<AddIrrigationSheet> {
                 ),
               ),
             ]),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _costCtrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(labelText: 'Costo (L.)'),
+            ),
             const SizedBox(height: 12),
             InkWell(
               onTap: () async {
@@ -134,10 +146,14 @@ class _AddIrrigationSheetState extends State<AddIrrigationSheet> {
                           'durationMin': _durationCtrl.text.isEmpty
                               ? null
                               : int.tryParse(_durationCtrl.text),
+                          'cost': _costCtrl.text.isEmpty
+                              ? null
+                              : double.tryParse(_costCtrl.text),
                           'appliedAt': _appliedAt.toUtc().toIso8601String(),
                           'notes':
                               _notesCtrl.text.isEmpty ? null : _notesCtrl.text,
                           'taskId': widget.taskId,
+                          'occurrenceId': widget.occurrenceId,
                         },
                       );
                       if (context.mounted) Navigator.pop(context);

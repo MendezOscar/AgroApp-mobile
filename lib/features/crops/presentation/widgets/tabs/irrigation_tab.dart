@@ -46,6 +46,8 @@ class IrrigationTab extends StatelessWidget {
                     Text('${item.volumeLiters!.toStringAsFixed(0)} litros'),
                   if (item.durationMin != null)
                     Text('${item.durationMin} minutos'),
+                  if (item.cost != null)
+                    Text('L. ${item.cost!.toStringAsFixed(2)}'),
                 ],
               ),
               trailing: IconButton(

@@ -7,6 +7,7 @@ class TaskOccurrenceEntity {
   final String? assignedTo;
   final String? assigneeName;
   final String? plotName;
+  final String? cropId;
   final String? cropName;
   final DateTime scheduledDate;
   final String shift;
@@ -23,6 +24,7 @@ class TaskOccurrenceEntity {
     this.assignedTo,
     this.assigneeName,
     this.plotName,
+    this.cropId,
     this.cropName,
     required this.scheduledDate,
     required this.shift,
@@ -35,6 +37,8 @@ class TaskOccurrenceEntity {
   String get shiftLabel => shift == 'Day' ? 'Diurno' : 'Nocturno';
   bool get isUnassigned => assignedTo == null;
   bool get isCompleted => status == 'Completed';
+  bool get needsRegistration =>
+      ['Irrigation', 'Fertilization', 'Labor'].contains(taskType);
   bool get isOverdue =>
       status == 'Pending' && scheduledDate.isBefore(DateTime.now());
 

@@ -8,6 +8,7 @@ class PhenologyStageModel extends PhenologyStageEntity {
     required super.stageName,
     required super.stageOrder,
     super.icon,
+    super.recommendations,
     required super.startedAt,
     super.endedAt,
     super.observations,
@@ -25,6 +26,7 @@ class PhenologyStageModel extends PhenologyStageEntity {
         stageName: json['stageName'],
         stageOrder: json['stageOrder'],
         icon: json['icon'],
+        recommendations: json['recommendations'],
         startedAt: DateTime.parse(json['startedAt']),
         endedAt:
             json['endedAt'] != null ? DateTime.parse(json['endedAt']) : null,

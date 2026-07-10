@@ -11,7 +11,7 @@ import '../../../auth/presentation/bloc/auth_state.dart';
 import '../bloc/shifts_cubit.dart';
 import '../bloc/shifts_state.dart';
 import '../widgets/occurrence_card.dart';
-import '../widgets/create_template_sheet.dart';
+import '../widgets/create_turno_sheet.dart';
 import '../widgets/assign_occurrence_sheet.dart';
 import '../widgets/update_occurrence_status_sheet.dart';
 
@@ -48,7 +48,7 @@ class _ShiftsPageState extends State<ShiftsPage>
     super.dispose();
   }
 
-  void _showCreateTemplate() {
+  void _showCreateTurno() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -57,7 +57,7 @@ class _ShiftsPageState extends State<ShiftsPage>
       ),
       builder: (_) => BlocProvider.value(
         value: _cubit,
-        child: const CreateTemplateSheet(),
+        child: const CreateTurnoSheet(),
       ),
     );
   }
@@ -243,9 +243,9 @@ class _ShiftsPageState extends State<ShiftsPage>
             ? FloatingActionButton.extended(
                 backgroundColor: AppTheme.primary,
                 icon: const Icon(Icons.add, color: Colors.white),
-                label: const Text('Nueva plantilla',
+                label: const Text('Nuevo turno',
                     style: TextStyle(color: Colors.white)),
-                onPressed: _showCreateTemplate,
+                onPressed: _showCreateTurno,
               )
             : null,
       ),
@@ -267,8 +267,8 @@ class _ShiftsPageState extends State<ShiftsPage>
             if (_isManager) ...[
               const SizedBox(height: 8),
               TextButton(
-                onPressed: _showCreateTemplate,
-                child: const Text('Crear plantilla'),
+                onPressed: _showCreateTurno,
+                child: const Text('Crear turno'),
               ),
             ],
           ],

@@ -12,9 +12,8 @@ class MainShell extends StatelessWidget {
     if (location.startsWith('/dashboard')) return 0;
     if (location.startsWith('/farms')) return 1;
     if (location.startsWith('/shifts')) return 2;
-    if (location.startsWith('/tasks')) return 3;
-    if (location.startsWith('/alerts')) return 4;
-    if (location.startsWith('/profile')) return 5;
+    if (location.startsWith('/alerts')) return 3;
+    if (location.startsWith('/profile')) return 4;
     return 0;
   }
 
@@ -38,12 +37,9 @@ class MainShell extends StatelessWidget {
               context.go('/shifts');
               break;
             case 3:
-              context.go('/tasks');
-              break;
-            case 4:
               context.go('/alerts');
               break;
-            case 5:
+            case 4:
               context.go('/profile');
               break;
           }
@@ -63,11 +59,6 @@ class MainShell extends StatelessWidget {
             icon: Icon(Icons.schedule_outlined),
             selectedIcon: Icon(Icons.schedule, color: AppTheme.primary),
             label: 'Turnos',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.task_outlined),
-            selectedIcon: Icon(Icons.task, color: AppTheme.primary),
-            label: 'Tareas',
           ),
           NavigationDestination(
             icon: Icon(Icons.notifications_outlined),

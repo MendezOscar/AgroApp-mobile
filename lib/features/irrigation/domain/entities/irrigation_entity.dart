@@ -5,6 +5,7 @@ class IrrigationEntity {
   final String method;
   final double? volumeLiters;
   final int? durationMin;
+  final double? cost;
   final DateTime appliedAt;
   final String? notes;
   final DateTime createdAt;
@@ -16,6 +17,7 @@ class IrrigationEntity {
     required this.method,
     this.volumeLiters,
     this.durationMin,
+    this.cost,
     required this.appliedAt,
     this.notes,
     required this.createdAt,

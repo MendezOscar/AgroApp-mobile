@@ -65,8 +65,15 @@ class _DashboardPageState extends State<DashboardPage> {
                             children: [
                               Row(
                                 children: [
-                                  const Icon(Icons.agriculture,
-                                      color: Colors.white70, size: 20),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(6),
+                                    child: Image.asset(
+                                      'assets/images/app_icon.png',
+                                      width: 20,
+                                      height: 20,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
                                   const SizedBox(width: 8),
                                   const Text('AgroApp',
                                       style: TextStyle(

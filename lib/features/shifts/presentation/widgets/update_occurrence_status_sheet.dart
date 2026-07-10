@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../crops/presentation/bloc/crop_detail_cubit.dart';
+import '../../../crops/presentation/widgets/sheets/add_fertilization_sheet.dart';
+import '../../../crops/presentation/widgets/sheets/add_irrigation_sheet.dart';
+import '../../../crops/presentation/widgets/sheets/add_labor_sheet.dart';
 import '../../domain/entities/task_occurrence_entity.dart';
 import '../bloc/shifts_cubit.dart';
 import '../bloc/shifts_state.dart';
@@ -40,11 +45,80 @@ class _UpdateOccurrenceStatusSheetState
     super.dispose();
   }
 
+  bool get _needsRegistration =>
+      widget.occurrence.needsRegistration &&
+      widget.occurrence.status != 'Completed';
+
+  void _openRegisterSheet(BuildContext context) {
+    if (widget.occurrence.cropId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Este turno no tiene un cultivo asociado'),
+          backgroundColor: AppTheme.error,
+        ),
+      );
+      return;
+    }
+    final cropId = widget.occurrence.cropId!;
+    final cubit = sl<CropDetailCubit>();
+    final shiftsCubit = context.read<ShiftsCubit>();
+
+    void onRegistered() {
+      if (context.mounted) Navigator.of(context).pop();
+      shiftsCubit.loadOccurrences();
+    }
+
+    Widget sheet;
+    switch (widget.occurrence.taskType) {
+      case 'Irrigation':
+        sheet = AddIrrigationSheet(
+          cropId: cropId,
+          occurrenceId: widget.occurrence.id,
+          onRegistered: onRegistered,
+        );
+        break;
+      case 'Fertilization':
+        sheet = AddFertilizationSheet(
+          cropId: cropId,
+          occurrenceId: widget.occurrence.id,
+          onRegistered: onRegistered,
+        );
+        break;
+      case 'Labor':
+        sheet = AddLaborSheet(
+          cropId: cropId,
+          occurrenceId: widget.occurrence.id,
+          onRegistered: onRegistered,
+        );
+        break;
+      default:
+        return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => BlocProvider.value(
+        value: cubit,
+        child: sheet,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<ShiftsCubit, ShiftsState>(
       listener: (context, state) {
         if (state.success != null) Navigator.pop(context);
+        if (state.error != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(state.error!), backgroundColor: AppTheme.error),
+          );
+        }
       },
       child: Padding(
         padding: EdgeInsets.only(
@@ -90,7 +164,13 @@ class _UpdateOccurrenceStatusSheetState
             ..._statuses.map((s) {
               final isSelected = _status == s['value'];
               return GestureDetector(
-                onTap: () => setState(() => _status = s['value']!),
+                onTap: () {
+                  if (s['value'] == 'Completed' && _needsRegistration) {
+                    _openRegisterSheet(context);
+                  } else {
+                    setState(() => _status = s['value']!);
+                  }
+                },
                 child: Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   padding:
@@ -119,7 +199,12 @@ class _UpdateOccurrenceStatusSheetState
                           color: isSelected ? AppTheme.primary : Colors.black87,
                         ),
                       ),
-                      if (isSelected) ...[
+                      if (s['value'] == 'Completed' && _needsRegistration) ...[
+                        const Spacer(),
+                        Text('Requiere registro',
+                            style: TextStyle(
+                                fontSize: 11, color: Colors.grey[500])),
+                      ] else if (isSelected) ...[
                         const Spacer(),
                         const Icon(Icons.check_circle, color: AppTheme.primary),
                       ],

@@ -2,16 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../../../../core/theme/app_theme.dart';
+import '../../../../phenology/presentation/widgets/phenology_recommendation_banner.dart';
 import '../../bloc/crop_detail_cubit.dart';
 
 class AddFertilizationSheet extends StatefulWidget {
   final String cropId;
   final String? taskId;
+  final String? occurrenceId;
   final VoidCallback? onRegistered;
   const AddFertilizationSheet({
     super.key,
     required this.cropId,
     this.taskId,
+    this.occurrenceId,
     this.onRegistered,
   });
 
@@ -74,6 +77,7 @@ class _AddFertilizationSheetState extends State<AddFertilizationSheet> {
                       .titleLarge
                       ?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
+              PhenologyRecommendationBanner(cropId: widget.cropId),
               TextFormField(
                 controller: _productNameCtrl,
                 decoration: const InputDecoration(labelText: 'Producto *'),
@@ -195,6 +199,7 @@ class _AddFertilizationSheetState extends State<AddFertilizationSheet> {
                                   ? null
                                   : _notesCtrl.text,
                               'taskId': widget.taskId,
+                              'occurrenceId': widget.occurrenceId,
                             },
                           );
                           if (context.mounted) Navigator.pop(context);

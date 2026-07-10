@@ -13,7 +13,6 @@ import '../../features/farms/presentation/pages/farms_page.dart';
 import '../../features/plots/presentation/pages/plots_page.dart';
 import '../../features/sensors/presentation/pages/dashboard_page.dart';
 import '../../features/shifts/presentation/pages/shifts_page.dart';
-import '../../features/task/presentation/pages/tasks_page.dart';
 import '../../features/users/presentation/pages/profile_page.dart';
 import '../widgets/main_shell.dart';
 
@@ -77,10 +76,6 @@ GoRouter createRouter(AuthBloc authBloc) {
           GoRoute(
             path: '/shifts',
             builder: (_, __) => const ShiftsPage(),
-          ),
-          GoRoute(
-            path: '/tasks',
-            builder: (_, __) => const TasksPage(),
           ),
           GoRoute(
             path: '/alerts',

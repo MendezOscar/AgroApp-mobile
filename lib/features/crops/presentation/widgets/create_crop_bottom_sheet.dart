@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../domain/entities/crop_entity.dart';
 import '../bloc/crops_bloc.dart';
 import '../bloc/crops_event.dart';
 import '../bloc/crops_state.dart';
@@ -23,6 +24,25 @@ class _CreateCropBottomSheetState extends State<CreateCropBottomSheet> {
   DateTime _plantedAt = DateTime.now();
   DateTime? _estimatedHarvest;
   final _fmt = DateFormat('dd/MM/yyyy');
+  CropEntity? _lastCrop;
+
+  @override
+  void initState() {
+    super.initState();
+    final state = context.read<CropsBloc>().state;
+    if (state is CropsLoaded && state.crops.isNotEmpty) {
+      final sorted = [...state.crops]
+        ..sort((a, b) => b.plantedAt.compareTo(a.plantedAt));
+      _lastCrop = sorted.first;
+    }
+    _cropTypeCtrl.addListener(() => setState(() {}));
+  }
+
+  bool get _sameCropTypeAsLast =>
+      _lastCrop != null &&
+      _cropTypeCtrl.text.trim().toLowerCase() ==
+          _lastCrop!.cropType.trim().toLowerCase() &&
+      _cropTypeCtrl.text.trim().isNotEmpty;
 
   @override
   void dispose() {
@@ -93,6 +113,15 @@ class _CreateCropBottomSheetState extends State<CreateCropBottomSheet> {
                       .titleLarge
                       ?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
+              if (_lastCrop != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    'Último cultivo en esta parcela: ${_lastCrop!.cropType} '
+                    '(sembrado el ${_fmt.format(_lastCrop!.plantedAt)})',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12.5),
+                  ),
+                ),
               TextFormField(
                 controller: _cropTypeCtrl,
                 decoration: const InputDecoration(
@@ -102,6 +131,26 @@ class _CreateCropBottomSheetState extends State<CreateCropBottomSheet> {
                 ),
                 validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
               ),
+              if (_sameCropTypeAsLast)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.warning_amber_rounded,
+                          color: Colors.orange, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Ya sembraste ${_lastCrop!.cropType} aquí la última '
+                          'vez — considera rotar de cultivo para cuidar el suelo.',
+                          style: const TextStyle(
+                              color: Colors.orange, fontSize: 12.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _varietyCtrl,

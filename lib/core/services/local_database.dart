@@ -15,7 +15,7 @@ class LocalDatabase {
 
     return await openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -56,6 +56,7 @@ class LocalDatabase {
     assigned_to TEXT,
     assignee_name TEXT,
     plot_name TEXT,
+    crop_id TEXT,
     crop_name TEXT,
     scheduled_date TEXT NOT NULL,
     shift TEXT NOT NULL,
@@ -350,6 +351,10 @@ class LocalDatabase {
       await db
           .execute('ALTER TABLE fertilization_logs ADD COLUMN task_id TEXT');
       await db.execute('ALTER TABLE labor_logs ADD COLUMN task_id TEXT');
+    }
+
+    if (oldVersion < 6) {
+      await db.execute('ALTER TABLE occurrences_cache ADD COLUMN crop_id TEXT');
     }
   }
 

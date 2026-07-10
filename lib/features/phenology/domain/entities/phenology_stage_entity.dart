@@ -5,6 +5,7 @@ class PhenologyStageEntity {
   final String stageName;
   final int stageOrder;
   final String? icon;
+  final String? recommendations;
   final DateTime startedAt;
   final DateTime? endedAt;
   final String? observations;
@@ -20,6 +21,7 @@ class PhenologyStageEntity {
     required this.stageName,
     required this.stageOrder,
     this.icon,
+    this.recommendations,
     required this.startedAt,
     this.endedAt,
     this.observations,

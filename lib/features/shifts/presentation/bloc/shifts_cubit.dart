@@ -100,6 +100,26 @@ class ShiftsCubit extends SafeCubit<ShiftsState> {
     }
   }
 
+  Future<void> createTurno(List<Map<String, dynamic>> tasks) async {
+    try {
+      final isOnline = await ConnectivityService.isOnline();
+      if (!isOnline) {
+        emit(state.copyWith(
+            error: 'Sin conexión. No se pueden crear turnos offline.'));
+        return;
+      }
+      for (final task in tasks) {
+        await _datasource.createTemplate(task);
+      }
+      await loadTemplates();
+      await loadOccurrences();
+      emit(state.copyWith(
+          success: 'Turno creado con ${tasks.length} tarea(s)'));
+    } catch (e) {
+      emit(state.copyWith(error: 'Error al crear el turno'));
+    }
+  }
+
   Future<void> assignOccurrence(
       String id, String assignedTo, String? shift) async {
     try {
