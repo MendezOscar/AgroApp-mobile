@@ -5,6 +5,7 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../crops/data/datasources/crops_remote_datasource.dart';
 import '../../../farms/data/datasources/farms_remote_datasource.dart';
+import '../../../phenology/data/datasources/phenology_remote_datasource.dart';
 import '../../../plots/data/datasources/plots_remote_datasource.dart';
 import '../bloc/shifts_cubit.dart';
 import '../bloc/shifts_state.dart';
@@ -47,6 +48,9 @@ class _TaskRowData {
   String? cropId;
   List<Map<String, dynamic>> crops = [];
   bool loadingCrops = false;
+  String? requiredPhenologyStage;
+  List<String> phenologyStages = [];
+  bool loadingStages = false;
 
   void dispose() {
     titleCtrl.dispose();
@@ -119,6 +123,7 @@ class _CreateTurnoSheetState extends State<CreateTurnoSheet> {
         row.crops = List<Map<String, dynamic>>.from(
           crops.where((c) => c['status'] == 'Active').map((c) => {
                 'id': c['id'],
+                'cropType': c['cropType'],
                 'name': [c['cropType'], c['variety']]
                     .where((v) => v != null && (v as String).isNotEmpty)
                     .join(' — '),
@@ -128,6 +133,29 @@ class _CreateTurnoSheetState extends State<CreateTurnoSheet> {
       });
     } catch (e) {
       if (mounted) setState(() => row.loadingCrops = false);
+    }
+  }
+
+  Future<void> _loadPhenologyStagesForRow(
+      _TaskRowData row, String cropType) async {
+    setState(() {
+      row.loadingStages = true;
+      row.phenologyStages = [];
+      row.requiredPhenologyStage = null;
+    });
+    try {
+      final templates =
+          await sl<PhenologyRemoteDatasource>().getTemplates(cropType);
+      if (!mounted) return;
+      setState(() {
+        row.phenologyStages = templates
+            .map((t) => t['stageName'] as String)
+            .toSet()
+            .toList();
+        row.loadingStages = false;
+      });
+    } catch (e) {
+      if (mounted) setState(() => row.loadingStages = false);
     }
   }
 
@@ -185,6 +213,7 @@ class _CreateTurnoSheetState extends State<CreateTurnoSheet> {
               'endDate': endDateStr,
               'plotId': row.plotId,
               'cropId': row.cropId,
+              'requiredPhenologyStage': row.requiredPhenologyStage,
             })
         .toList();
 
@@ -530,8 +559,50 @@ class _CreateTurnoSheetState extends State<CreateTurnoSheet> {
                                   overflow: TextOverflow.ellipsis),
                             ))
                         .toList(),
-                    onChanged: (v) => setState(() => row.cropId = v),
+                    onChanged: (v) {
+                      setState(() => row.cropId = v);
+                      final crop = row.crops
+                          .cast<Map<String, dynamic>?>()
+                          .firstWhere((c) => c?['id'] == v, orElse: () => null);
+                      final cropType = crop?['cropType'] as String?;
+                      if (v != null && cropType != null) {
+                        _loadPhenologyStagesForRow(row, cropType);
+                      } else {
+                        setState(() {
+                          row.phenologyStages = [];
+                          row.requiredPhenologyStage = null;
+                        });
+                      }
+                    },
                   ),
+            if (row.loadingStages) ...[
+              const SizedBox(height: 8),
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(12),
+                  child: CircularProgressIndicator(color: AppTheme.primary),
+                ),
+              ),
+            ] else if (row.phenologyStages.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: row.requiredPhenologyStage,
+                decoration: const InputDecoration(
+                  labelText: 'Solo durante etapa (opcional)',
+                  prefixIcon: Icon(Icons.eco_outlined),
+                ),
+                items: [
+                  const DropdownMenuItem(
+                      value: null, child: Text('Cualquier etapa')),
+                  ...row.phenologyStages.map((s) => DropdownMenuItem(
+                        value: s,
+                        child: Text(s, overflow: TextOverflow.ellipsis),
+                      )),
+                ],
+                onChanged: (v) =>
+                    setState(() => row.requiredPhenologyStage = v),
+              ),
+            ],
           ],
         ],
       ),
